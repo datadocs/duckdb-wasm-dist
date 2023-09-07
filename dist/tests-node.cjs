@@ -95,10 +95,15 @@ var require_path = __commonJS({
   "../../node_modules/fast-glob/out/utils/path.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    exports.removeLeadingDotSegment = exports.escape = exports.makeAbsolute = exports.unixify = void 0;
+    exports.convertPosixPathToPattern = exports.convertWindowsPathToPattern = exports.convertPathToPattern = exports.escapePosixPath = exports.escapeWindowsPath = exports.escape = exports.removeLeadingDotSegment = exports.makeAbsolute = exports.unixify = void 0;
+    var os = require("os");
     var path2 = require("path");
+    var IS_WINDOWS_PLATFORM = os.platform() === "win32";
     var LEADING_DOT_SEGMENT_CHARACTERS_COUNT = 2;
-    var UNESCAPED_GLOB_SYMBOLS_RE = /(\\?)([()*?[\]{|}]|^!|[!+@](?=\())/g;
+    var POSIX_UNESCAPED_GLOB_SYMBOLS_RE = /(\\?)([()*?[\]{|}]|^!|[!+@](?=\()|\\(?![!()*+?@[\]{|}]))/g;
+    var WINDOWS_UNESCAPED_GLOB_SYMBOLS_RE = /(\\?)([(){}]|^!|[!+@](?=\())/g;
+    var DOS_DEVICE_PATH_RE = /^\\\\([.?])/;
+    var WINDOWS_BACKSLASHES_RE = /\\(?![!()+@{}])/g;
     function unixify(filepath) {
       return filepath.replace(/\\/g, "/");
     }
@@ -107,10 +112,6 @@ var require_path = __commonJS({
       return path2.resolve(cwd, filepath);
     }
     exports.makeAbsolute = makeAbsolute;
-    function escape(pattern) {
-      return pattern.replace(UNESCAPED_GLOB_SYMBOLS_RE, "\\$2");
-    }
-    exports.escape = escape;
     function removeLeadingDotSegment(entry) {
       if (entry.charAt(0) === ".") {
         const secondCharactery = entry.charAt(1);
@@ -121,6 +122,24 @@ var require_path = __commonJS({
       return entry;
     }
     exports.removeLeadingDotSegment = removeLeadingDotSegment;
+    exports.escape = IS_WINDOWS_PLATFORM ? escapeWindowsPath : escapePosixPath;
+    function escapeWindowsPath(pattern) {
+      return pattern.replace(WINDOWS_UNESCAPED_GLOB_SYMBOLS_RE, "\\$2");
+    }
+    exports.escapeWindowsPath = escapeWindowsPath;
+    function escapePosixPath(pattern) {
+      return pattern.replace(POSIX_UNESCAPED_GLOB_SYMBOLS_RE, "\\$2");
+    }
+    exports.escapePosixPath = escapePosixPath;
+    exports.convertPathToPattern = IS_WINDOWS_PLATFORM ? convertWindowsPathToPattern : convertPosixPathToPattern;
+    function convertWindowsPathToPattern(filepath) {
+      return escapeWindowsPath(filepath).replace(DOS_DEVICE_PATH_RE, "//$1").replace(WINDOWS_BACKSLASHES_RE, "/");
+    }
+    exports.convertWindowsPathToPattern = convertWindowsPathToPattern;
+    function convertPosixPathToPattern(filepath) {
+      return escapePosixPath(filepath);
+    }
+    exports.convertPosixPathToPattern = convertPosixPathToPattern;
   }
 });
 
@@ -3099,7 +3118,7 @@ var require_pattern = __commonJS({
   "../../node_modules/fast-glob/out/utils/pattern.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    exports.matchAny = exports.convertPatternsToRe = exports.makeRe = exports.getPatternParts = exports.expandBraceExpansion = exports.expandPatternsWithBraceExpansion = exports.isAffectDepthOfReadingPattern = exports.endsWithSlashGlobStar = exports.hasGlobStar = exports.getBaseDirectory = exports.isPatternRelatedToParentDirectory = exports.getPatternsOutsideCurrentDirectory = exports.getPatternsInsideCurrentDirectory = exports.getPositivePatterns = exports.getNegativePatterns = exports.isPositivePattern = exports.isNegativePattern = exports.convertToNegativePattern = exports.convertToPositivePattern = exports.isDynamicPattern = exports.isStaticPattern = void 0;
+    exports.removeDuplicateSlashes = exports.matchAny = exports.convertPatternsToRe = exports.makeRe = exports.getPatternParts = exports.expandBraceExpansion = exports.expandPatternsWithBraceExpansion = exports.isAffectDepthOfReadingPattern = exports.endsWithSlashGlobStar = exports.hasGlobStar = exports.getBaseDirectory = exports.isPatternRelatedToParentDirectory = exports.getPatternsOutsideCurrentDirectory = exports.getPatternsInsideCurrentDirectory = exports.getPositivePatterns = exports.getNegativePatterns = exports.isPositivePattern = exports.isNegativePattern = exports.convertToNegativePattern = exports.convertToPositivePattern = exports.isDynamicPattern = exports.isStaticPattern = void 0;
     var path2 = require("path");
     var globParent = require_glob_parent();
     var micromatch = require_micromatch();
@@ -3110,6 +3129,7 @@ var require_pattern = __commonJS({
     var REGEX_GROUP_SYMBOLS_RE = /(?:^|[^!*+?@])\([^(]*\|[^|]*\)/;
     var GLOB_EXTENSION_SYMBOLS_RE = /[!*+?@]\([^(]*\)/;
     var BRACE_EXPANSION_SEPARATORS_RE = /,|\.\./;
+    var DOUBLE_SLASH_RE = /(?!^)\/{2,}/g;
     function isStaticPattern(pattern, options = {}) {
       return !isDynamicPattern(pattern, options);
     }
@@ -3205,10 +3225,9 @@ var require_pattern = __commonJS({
     }
     exports.expandPatternsWithBraceExpansion = expandPatternsWithBraceExpansion;
     function expandBraceExpansion(pattern) {
-      return micromatch.braces(pattern, {
-        expand: true,
-        nodupes: true
-      });
+      const patterns = micromatch.braces(pattern, { expand: true, nodupes: true });
+      patterns.sort((a, b) => a.length - b.length);
+      return patterns.filter((pattern2) => pattern2 !== "");
     }
     exports.expandBraceExpansion = expandBraceExpansion;
     function getPatternParts(pattern, options) {
@@ -3235,6 +3254,10 @@ var require_pattern = __commonJS({
       return patternsRe.some((patternRe) => patternRe.test(entry));
     }
     exports.matchAny = matchAny;
+    function removeDuplicateSlashes(pattern) {
+      return pattern.replace(DOUBLE_SLASH_RE, "/");
+    }
+    exports.removeDuplicateSlashes = removeDuplicateSlashes;
   }
 });
 
@@ -3427,9 +3450,11 @@ var require_tasks = __commonJS({
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.convertPatternGroupToTask = exports.convertPatternGroupsToTasks = exports.groupPatternsByBaseDirectory = exports.getNegativePatternsAsPositive = exports.getPositivePatterns = exports.convertPatternsToTasks = exports.generate = void 0;
     var utils = require_utils3();
-    function generate(patterns, settings) {
+    function generate(input, settings) {
+      const patterns = processPatterns(input, settings);
+      const ignore = processPatterns(settings.ignore, settings);
       const positivePatterns = getPositivePatterns(patterns);
-      const negativePatterns = getNegativePatternsAsPositive(patterns, settings.ignore);
+      const negativePatterns = getNegativePatternsAsPositive(patterns, ignore);
       const staticPatterns = positivePatterns.filter((pattern) => utils.pattern.isStaticPattern(pattern, settings));
       const dynamicPatterns = positivePatterns.filter((pattern) => utils.pattern.isDynamicPattern(pattern, settings));
       const staticTasks = convertPatternsToTasks(
@@ -3447,6 +3472,16 @@ var require_tasks = __commonJS({
       return staticTasks.concat(dynamicTasks);
     }
     exports.generate = generate;
+    function processPatterns(input, settings) {
+      let patterns = input;
+      if (settings.braceExpansion) {
+        patterns = utils.pattern.expandPatternsWithBraceExpansion(patterns);
+      }
+      if (settings.baseNameMatch) {
+        patterns = patterns.map((pattern) => pattern.includes("/") ? pattern : `**/${pattern}`);
+      }
+      return patterns.map((pattern) => utils.pattern.removeDuplicateSlashes(pattern));
+    }
     function convertPatternsToTasks(positive, negative, dynamic) {
       const tasks = [];
       const patternsOutsideCurrentDirectory = utils.pattern.getPatternsOutsideCurrentDirectory(positive);
@@ -3501,24 +3536,6 @@ var require_tasks = __commonJS({
       };
     }
     exports.convertPatternGroupToTask = convertPatternGroupToTask;
-  }
-});
-
-// ../../node_modules/fast-glob/out/managers/patterns.js
-var require_patterns = __commonJS({
-  "../../node_modules/fast-glob/out/managers/patterns.js"(exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    exports.removeDuplicateSlashes = exports.transform = void 0;
-    var DOUBLE_SLASH_RE = /(?!^)\/{2,}/g;
-    function transform(patterns) {
-      return patterns.map((pattern) => removeDuplicateSlashes(pattern));
-    }
-    exports.transform = transform;
-    function removeDuplicateSlashes(pattern) {
-      return pattern.replace(DOUBLE_SLASH_RE, "/");
-    }
-    exports.removeDuplicateSlashes = removeDuplicateSlashes;
   }
 });
 
@@ -4864,8 +4881,7 @@ var require_matcher = __commonJS({
         this._fillStorage();
       }
       _fillStorage() {
-        const patterns = utils.pattern.expandPatternsWithBraceExpansion(this._patterns);
-        for (const pattern of patterns) {
+        for (const pattern of this._patterns) {
           const segments = this._getPatternSegments(pattern);
           const sections = this._splitSegmentsIntoSections(segments);
           this._storage.push({
@@ -5017,32 +5033,32 @@ var require_entry = __commonJS({
       }
       getFilter(positive, negative) {
         const positiveRe = utils.pattern.convertPatternsToRe(positive, this._micromatchOptions);
-        const negativeRe = utils.pattern.convertPatternsToRe(negative, this._micromatchOptions);
+        const negativeRe = utils.pattern.convertPatternsToRe(negative, Object.assign(Object.assign({}, this._micromatchOptions), { dot: true }));
         return (entry) => this._filter(entry, positiveRe, negativeRe);
       }
       _filter(entry, positiveRe, negativeRe) {
-        if (this._settings.unique && this._isDuplicateEntry(entry)) {
+        const filepath = utils.path.removeLeadingDotSegment(entry.path);
+        if (this._settings.unique && this._isDuplicateEntry(filepath)) {
           return false;
         }
         if (this._onlyFileFilter(entry) || this._onlyDirectoryFilter(entry)) {
           return false;
         }
-        if (this._isSkippedByAbsoluteNegativePatterns(entry.path, negativeRe)) {
+        if (this._isSkippedByAbsoluteNegativePatterns(filepath, negativeRe)) {
           return false;
         }
-        const filepath = this._settings.baseNameMatch ? entry.name : entry.path;
         const isDirectory = entry.dirent.isDirectory();
-        const isMatched = this._isMatchToPatterns(filepath, positiveRe, isDirectory) && !this._isMatchToPatterns(entry.path, negativeRe, isDirectory);
+        const isMatched = this._isMatchToPatterns(filepath, positiveRe, isDirectory) && !this._isMatchToPatterns(filepath, negativeRe, isDirectory);
         if (this._settings.unique && isMatched) {
-          this._createIndexRecord(entry);
+          this._createIndexRecord(filepath);
         }
         return isMatched;
       }
-      _isDuplicateEntry(entry) {
-        return this.index.has(entry.path);
+      _isDuplicateEntry(filepath) {
+        return this.index.has(filepath);
       }
-      _createIndexRecord(entry) {
-        this.index.set(entry.path, void 0);
+      _createIndexRecord(filepath) {
+        this.index.set(filepath, void 0);
       }
       _onlyFileFilter(entry) {
         return this._settings.onlyFiles && !entry.dirent.isFile();
@@ -5057,8 +5073,7 @@ var require_entry = __commonJS({
         const fullpath = utils.path.makeAbsolute(this._settings.cwd, entryPath);
         return utils.pattern.matchAny(fullpath, patternsRe);
       }
-      _isMatchToPatterns(entryPath, patternsRe, isDirectory) {
-        const filepath = utils.path.removeLeadingDotSegment(entryPath);
+      _isMatchToPatterns(filepath, patternsRe, isDirectory) {
         const isMatched = utils.pattern.matchAny(filepath, patternsRe);
         if (!isMatched && isDirectory) {
           return utils.pattern.matchAny(filepath + "/", patternsRe);
@@ -5364,6 +5379,7 @@ var require_settings4 = __commonJS({
         if (this.stats) {
           this.objectMode = true;
         }
+        this.ignore = [].concat(this.ignore);
       }
       _getValue(option, value) {
         return option === void 0 ? value : option;
@@ -5381,7 +5397,6 @@ var require_out4 = __commonJS({
   "../../node_modules/fast-glob/out/index.js"(exports, module2) {
     "use strict";
     var taskManager = require_tasks();
-    var patternManager = require_patterns();
     var async_1 = require_async6();
     var stream_1 = require_stream4();
     var sync_1 = require_sync6();
@@ -5394,6 +5409,10 @@ var require_out4 = __commonJS({
       return utils.array.flatten(result);
     }
     (function(FastGlob2) {
+      FastGlob2.glob = FastGlob2;
+      FastGlob2.globSync = sync2;
+      FastGlob2.globStream = stream;
+      FastGlob2.async = FastGlob2;
       function sync2(source, options) {
         assertPatternsInput(source);
         const works = getWorks(source, sync_1.default, options);
@@ -5408,7 +5427,7 @@ var require_out4 = __commonJS({
       FastGlob2.stream = stream;
       function generateTasks(source, options) {
         assertPatternsInput(source);
-        const patterns = patternManager.transform([].concat(source));
+        const patterns = [].concat(source);
         const settings = new settings_1.default(options);
         return taskManager.generate(patterns, settings);
       }
@@ -5424,9 +5443,40 @@ var require_out4 = __commonJS({
         return utils.path.escape(source);
       }
       FastGlob2.escapePath = escapePath;
+      function convertPathToPattern(source) {
+        assertPatternsInput(source);
+        return utils.path.convertPathToPattern(source);
+      }
+      FastGlob2.convertPathToPattern = convertPathToPattern;
+      let posix;
+      (function(posix2) {
+        function escapePath2(source) {
+          assertPatternsInput(source);
+          return utils.path.escapePosixPath(source);
+        }
+        posix2.escapePath = escapePath2;
+        function convertPathToPattern2(source) {
+          assertPatternsInput(source);
+          return utils.path.convertPosixPathToPattern(source);
+        }
+        posix2.convertPathToPattern = convertPathToPattern2;
+      })(posix = FastGlob2.posix || (FastGlob2.posix = {}));
+      let win32;
+      (function(win322) {
+        function escapePath2(source) {
+          assertPatternsInput(source);
+          return utils.path.escapeWindowsPath(source);
+        }
+        win322.escapePath = escapePath2;
+        function convertPathToPattern2(source) {
+          assertPatternsInput(source);
+          return utils.path.convertWindowsPathToPattern(source);
+        }
+        win322.convertPathToPattern = convertPathToPattern2;
+      })(win32 = FastGlob2.win32 || (FastGlob2.win32 = {}));
     })(FastGlob || (FastGlob = {}));
     function getWorks(source, _Provider, options) {
-      const patterns = patternManager.transform([].concat(source));
+      const patterns = [].concat(source);
       const settings = new settings_1.default(options);
       const tasks = taskManager.generate(patterns, settings);
       const provider = new _Provider(settings);
@@ -5749,10 +5799,10 @@ var require_duckdb_mvp = __commonJS({
           function receiveInstance(instance, module3) {
             var exports2 = instance.exports;
             Module["asm"] = exports2;
-            wasmMemory = Module["asm"]["Ra"];
+            wasmMemory = Module["asm"]["Ga"];
             updateMemoryViews();
-            wasmTable = Module["asm"]["Ua"];
-            addOnInit(Module["asm"]["Sa"]);
+            wasmTable = Module["asm"]["Ja"];
+            addOnInit(Module["asm"]["Ha"]);
             removeRunDependency("wasm-instantiate");
             return exports2;
           }
@@ -7033,46 +7083,6 @@ var require_duckdb_mvp = __commonJS({
         function _strftime_l(s, maxsize, format, tm, loc) {
           return _strftime(s, maxsize, format, tm);
         }
-        function _ucnv_close_64() {
-          err("missing function: ucnv_close_64");
-          abort(-1);
-        }
-        function _ucnv_convertEx_64() {
-          err("missing function: ucnv_convertEx_64");
-          abort(-1);
-        }
-        function _ucnv_open_64() {
-          err("missing function: ucnv_open_64");
-          abort(-1);
-        }
-        function _ucnv_toAlgorithmic_64() {
-          err("missing function: ucnv_toAlgorithmic_64");
-          abort(-1);
-        }
-        function _ucsdet_close_64() {
-          err("missing function: ucsdet_close_64");
-          abort(-1);
-        }
-        function _ucsdet_detect_64() {
-          err("missing function: ucsdet_detect_64");
-          abort(-1);
-        }
-        function _ucsdet_getConfidence_64() {
-          err("missing function: ucsdet_getConfidence_64");
-          abort(-1);
-        }
-        function _ucsdet_getName_64() {
-          err("missing function: ucsdet_getName_64");
-          abort(-1);
-        }
-        function _ucsdet_open_64() {
-          err("missing function: ucsdet_open_64");
-          abort(-1);
-        }
-        function _ucsdet_setText_64() {
-          err("missing function: ucsdet_setText_64");
-          abort(-1);
-        }
         function _unzClose() {
           err("missing function: unzClose");
           abort(-1);
@@ -7103,10 +7113,6 @@ var require_duckdb_mvp = __commonJS({
         }
         function _unzLocateFile() {
           err("missing function: unzLocateFile");
-          abort(-1);
-        }
-        function _unzOpen() {
-          err("missing function: unzOpen");
           abort(-1);
         }
         function _unzOpen2() {
@@ -7194,157 +7200,157 @@ var require_duckdb_mvp = __commonJS({
           ret = onDone(ret);
           return ret;
         }
-        var wasmImports = { "g": _XML_GetBuffer, "V": _XML_GetErrorCode, "da": _XML_Parse, "n": _XML_ParseBuffer, "p": _XML_ParserCreate, "d": _XML_ParserFree, "B": _XML_ResumeParser, "f": _XML_SetCharacterDataHandler, "b": _XML_SetElementHandler, "o": _XML_SetUserData, "h": _XML_StopParser, "a": ___cxa_throw, "La": ___dlsym, "Fa": ___syscall__newselect, "Ja": ___syscall_bind, "Ia": ___syscall_connect, "Ba": ___syscall_faccessat, "e": ___syscall_fcntl64, "Aa": ___syscall_fstat64, "O": ___syscall_ftruncate64, "va": ___syscall_getdents64, "Da": ___syscall_getpeername, "Ea": ___syscall_getsockopt, "K": ___syscall_ioctl, "xa": ___syscall_lstat64, "wa": ___syscall_mkdirat, "ya": ___syscall_newfstatat, "L": ___syscall_openat, "Ga": ___syscall_recvfrom, "ta": ___syscall_renameat, "F": ___syscall_rmdir, "Ha": ___syscall_sendto, "H": ___syscall_socket, "za": ___syscall_stat64, "G": ___syscall_unlinkat, "Na": __emscripten_get_now_is_monotonic, "fa": __localtime_js, "ga": __tzset_js, "j": _abort, "Ma": _dlopen, "ma": _duckdb_web_fs_directory_create, "na": _duckdb_web_fs_directory_exists, "ka": _duckdb_web_fs_directory_list_files, "la": _duckdb_web_fs_directory_remove, "D": _duckdb_web_fs_file_close, "ia": _duckdb_web_fs_file_exists, "N": _duckdb_web_fs_file_get_last_modified_time, "ja": _duckdb_web_fs_file_move, "pa": _duckdb_web_fs_file_open, "q": _duckdb_web_fs_file_read, "oa": _duckdb_web_fs_file_truncate, "E": _duckdb_web_fs_file_write, "qa": _duckdb_web_fs_get_default_data_protocol, "ha": _duckdb_web_fs_glob, "C": _duckdb_web_test_platform_feature, "ra": _duckdb_web_udf_scalar_call, "M": _emscripten_date_now, "Oa": _emscripten_get_heap_max, "i": _emscripten_get_now, "Ka": _emscripten_memcpy_big, "Qa": _emscripten_resize_heap, "T": _environ_get, "W": _environ_sizes_get, "l": _fd_close, "ea": _fd_fdstat_get, "Q": _fd_pread, "P": _fd_pwrite, "J": _fd_read, "R": _fd_seek, "ua": _fd_sync, "w": _fd_write, "I": _getaddrinfo, "sa": _getentropy, "Ca": _getnameinfo, "Pa": _strftime_l, "c": _ucnv_close_64, "X": _ucnv_convertEx_64, "v": _ucnv_open_64, "Z": _ucnv_toAlgorithmic_64, "Y": _ucsdet_close_64, "aa": _ucsdet_detect_64, "$": _ucsdet_getConfidence_64, "_": _ucsdet_getName_64, "ca": _ucsdet_open_64, "ba": _ucsdet_setText_64, "k": _unzClose, "u": _unzCloseCurrentFile, "z": _unzGetCurrentFileInfo, "r": _unzGetCurrentFileInfo64, "U": _unzGetGlobalInfo, "A": _unzGoToFirstFile, "y": _unzGoToNextFile, "t": _unzLocateFile, "x": _unzOpen, "S": _unzOpen2, "s": _unzOpenCurrentFile, "m": _unzReadCurrentFile };
+        var wasmImports = { "g": _XML_GetBuffer, "T": _XML_GetErrorCode, "U": _XML_Parse, "m": _XML_ParseBuffer, "o": _XML_ParserCreate, "c": _XML_ParserFree, "z": _XML_ResumeParser, "f": _XML_SetCharacterDataHandler, "b": _XML_SetElementHandler, "n": _XML_SetUserData, "h": _XML_StopParser, "a": ___cxa_throw, "Aa": ___dlsym, "ua": ___syscall__newselect, "ya": ___syscall_bind, "xa": ___syscall_connect, "qa": ___syscall_faccessat, "d": ___syscall_fcntl64, "pa": ___syscall_fstat64, "N": ___syscall_ftruncate64, "ka": ___syscall_getdents64, "sa": ___syscall_getpeername, "ta": ___syscall_getsockopt, "I": ___syscall_ioctl, "ma": ___syscall_lstat64, "la": ___syscall_mkdirat, "na": ___syscall_newfstatat, "J": ___syscall_openat, "va": ___syscall_recvfrom, "ia": ___syscall_renameat, "D": ___syscall_rmdir, "wa": ___syscall_sendto, "F": ___syscall_socket, "oa": ___syscall_stat64, "E": ___syscall_unlinkat, "Ca": __emscripten_get_now_is_monotonic, "W": __localtime_js, "X": __tzset_js, "e": _abort, "Ba": _dlopen, "ba": _duckdb_web_fs_directory_create, "ca": _duckdb_web_fs_directory_exists, "$": _duckdb_web_fs_directory_list_files, "aa": _duckdb_web_fs_directory_remove, "B": _duckdb_web_fs_file_close, "Z": _duckdb_web_fs_file_exists, "M": _duckdb_web_fs_file_get_last_modified_time, "_": _duckdb_web_fs_file_move, "ea": _duckdb_web_fs_file_open, "p": _duckdb_web_fs_file_read, "da": _duckdb_web_fs_file_truncate, "C": _duckdb_web_fs_file_write, "fa": _duckdb_web_fs_get_default_data_protocol, "Y": _duckdb_web_fs_glob, "A": _duckdb_web_test_platform_feature, "ga": _duckdb_web_udf_scalar_call, "K": _emscripten_date_now, "Da": _emscripten_get_heap_max, "i": _emscripten_get_now, "za": _emscripten_memcpy_big, "Fa": _emscripten_resize_heap, "L": _environ_get, "R": _environ_sizes_get, "k": _fd_close, "V": _fd_fdstat_get, "P": _fd_pread, "O": _fd_pwrite, "H": _fd_read, "Q": _fd_seek, "ja": _fd_sync, "u": _fd_write, "G": _getaddrinfo, "ha": _getentropy, "ra": _getnameinfo, "Ea": _strftime_l, "j": _unzClose, "t": _unzCloseCurrentFile, "x": _unzGetCurrentFileInfo, "q": _unzGetCurrentFileInfo64, "S": _unzGetGlobalInfo, "y": _unzGoToFirstFile, "w": _unzGoToNextFile, "s": _unzLocateFile, "v": _unzOpen2, "r": _unzOpenCurrentFile, "l": _unzReadCurrentFile };
         var asm = createWasm();
         var ___wasm_call_ctors = function() {
-          return (___wasm_call_ctors = Module["asm"]["Sa"]).apply(null, arguments);
+          return (___wasm_call_ctors = Module["asm"]["Ha"]).apply(null, arguments);
         };
         var _main = Module["_main"] = function() {
-          return (_main = Module["_main"] = Module["asm"]["Ta"]).apply(null, arguments);
+          return (_main = Module["_main"] = Module["asm"]["Ia"]).apply(null, arguments);
         };
         var _duckdb_web_fs_glob_add_path = Module["_duckdb_web_fs_glob_add_path"] = function() {
-          return (_duckdb_web_fs_glob_add_path = Module["_duckdb_web_fs_glob_add_path"] = Module["asm"]["Va"]).apply(null, arguments);
+          return (_duckdb_web_fs_glob_add_path = Module["_duckdb_web_fs_glob_add_path"] = Module["asm"]["Ka"]).apply(null, arguments);
         };
         var _duckdb_web_clear_response = Module["_duckdb_web_clear_response"] = function() {
-          return (_duckdb_web_clear_response = Module["_duckdb_web_clear_response"] = Module["asm"]["Wa"]).apply(null, arguments);
+          return (_duckdb_web_clear_response = Module["_duckdb_web_clear_response"] = Module["asm"]["La"]).apply(null, arguments);
         };
         var _duckdb_web_fail_with = Module["_duckdb_web_fail_with"] = function() {
-          return (_duckdb_web_fail_with = Module["_duckdb_web_fail_with"] = Module["asm"]["Xa"]).apply(null, arguments);
+          return (_duckdb_web_fail_with = Module["_duckdb_web_fail_with"] = Module["asm"]["Ma"]).apply(null, arguments);
         };
         var _duckdb_web_reset = Module["_duckdb_web_reset"] = function() {
-          return (_duckdb_web_reset = Module["_duckdb_web_reset"] = Module["asm"]["Ya"]).apply(null, arguments);
+          return (_duckdb_web_reset = Module["_duckdb_web_reset"] = Module["asm"]["Na"]).apply(null, arguments);
         };
         var _duckdb_web_connect = Module["_duckdb_web_connect"] = function() {
-          return (_duckdb_web_connect = Module["_duckdb_web_connect"] = Module["asm"]["Za"]).apply(null, arguments);
+          return (_duckdb_web_connect = Module["_duckdb_web_connect"] = Module["asm"]["Oa"]).apply(null, arguments);
         };
         var _duckdb_web_disconnect = Module["_duckdb_web_disconnect"] = function() {
-          return (_duckdb_web_disconnect = Module["_duckdb_web_disconnect"] = Module["asm"]["_a"]).apply(null, arguments);
+          return (_duckdb_web_disconnect = Module["_duckdb_web_disconnect"] = Module["asm"]["Pa"]).apply(null, arguments);
         };
         var _duckdb_web_flush_files = Module["_duckdb_web_flush_files"] = function() {
-          return (_duckdb_web_flush_files = Module["_duckdb_web_flush_files"] = Module["asm"]["$a"]).apply(null, arguments);
+          return (_duckdb_web_flush_files = Module["_duckdb_web_flush_files"] = Module["asm"]["Qa"]).apply(null, arguments);
         };
         var _duckdb_web_flush_file = Module["_duckdb_web_flush_file"] = function() {
-          return (_duckdb_web_flush_file = Module["_duckdb_web_flush_file"] = Module["asm"]["ab"]).apply(null, arguments);
+          return (_duckdb_web_flush_file = Module["_duckdb_web_flush_file"] = Module["asm"]["Ra"]).apply(null, arguments);
         };
         var _duckdb_web_open = Module["_duckdb_web_open"] = function() {
-          return (_duckdb_web_open = Module["_duckdb_web_open"] = Module["asm"]["bb"]).apply(null, arguments);
+          return (_duckdb_web_open = Module["_duckdb_web_open"] = Module["asm"]["Sa"]).apply(null, arguments);
         };
         var _duckdb_web_get_global_file_info = Module["_duckdb_web_get_global_file_info"] = function() {
-          return (_duckdb_web_get_global_file_info = Module["_duckdb_web_get_global_file_info"] = Module["asm"]["cb"]).apply(null, arguments);
+          return (_duckdb_web_get_global_file_info = Module["_duckdb_web_get_global_file_info"] = Module["asm"]["Ta"]).apply(null, arguments);
         };
         var _duckdb_web_collect_file_stats = Module["_duckdb_web_collect_file_stats"] = function() {
-          return (_duckdb_web_collect_file_stats = Module["_duckdb_web_collect_file_stats"] = Module["asm"]["db"]).apply(null, arguments);
+          return (_duckdb_web_collect_file_stats = Module["_duckdb_web_collect_file_stats"] = Module["asm"]["Ua"]).apply(null, arguments);
         };
         var _duckdb_web_export_file_stats = Module["_duckdb_web_export_file_stats"] = function() {
-          return (_duckdb_web_export_file_stats = Module["_duckdb_web_export_file_stats"] = Module["asm"]["eb"]).apply(null, arguments);
+          return (_duckdb_web_export_file_stats = Module["_duckdb_web_export_file_stats"] = Module["asm"]["Va"]).apply(null, arguments);
         };
         var _duckdb_web_fs_drop_file = Module["_duckdb_web_fs_drop_file"] = function() {
-          return (_duckdb_web_fs_drop_file = Module["_duckdb_web_fs_drop_file"] = Module["asm"]["fb"]).apply(null, arguments);
+          return (_duckdb_web_fs_drop_file = Module["_duckdb_web_fs_drop_file"] = Module["asm"]["Wa"]).apply(null, arguments);
         };
         var _duckdb_web_fs_drop_files = Module["_duckdb_web_fs_drop_files"] = function() {
-          return (_duckdb_web_fs_drop_files = Module["_duckdb_web_fs_drop_files"] = Module["asm"]["gb"]).apply(null, arguments);
+          return (_duckdb_web_fs_drop_files = Module["_duckdb_web_fs_drop_files"] = Module["asm"]["Xa"]).apply(null, arguments);
         };
         var _duckdb_web_fs_glob_file_infos = Module["_duckdb_web_fs_glob_file_infos"] = function() {
-          return (_duckdb_web_fs_glob_file_infos = Module["_duckdb_web_fs_glob_file_infos"] = Module["asm"]["hb"]).apply(null, arguments);
+          return (_duckdb_web_fs_glob_file_infos = Module["_duckdb_web_fs_glob_file_infos"] = Module["asm"]["Ya"]).apply(null, arguments);
         };
         var _duckdb_web_fs_get_file_info_by_id = Module["_duckdb_web_fs_get_file_info_by_id"] = function() {
-          return (_duckdb_web_fs_get_file_info_by_id = Module["_duckdb_web_fs_get_file_info_by_id"] = Module["asm"]["ib"]).apply(null, arguments);
+          return (_duckdb_web_fs_get_file_info_by_id = Module["_duckdb_web_fs_get_file_info_by_id"] = Module["asm"]["Za"]).apply(null, arguments);
         };
         var _duckdb_web_fs_get_file_info_by_name = Module["_duckdb_web_fs_get_file_info_by_name"] = function() {
-          return (_duckdb_web_fs_get_file_info_by_name = Module["_duckdb_web_fs_get_file_info_by_name"] = Module["asm"]["jb"]).apply(null, arguments);
+          return (_duckdb_web_fs_get_file_info_by_name = Module["_duckdb_web_fs_get_file_info_by_name"] = Module["asm"]["_a"]).apply(null, arguments);
         };
         var _duckdb_web_fs_register_file_url = Module["_duckdb_web_fs_register_file_url"] = function() {
-          return (_duckdb_web_fs_register_file_url = Module["_duckdb_web_fs_register_file_url"] = Module["asm"]["kb"]).apply(null, arguments);
+          return (_duckdb_web_fs_register_file_url = Module["_duckdb_web_fs_register_file_url"] = Module["asm"]["$a"]).apply(null, arguments);
         };
         var _duckdb_web_fs_register_file_buffer = Module["_duckdb_web_fs_register_file_buffer"] = function() {
-          return (_duckdb_web_fs_register_file_buffer = Module["_duckdb_web_fs_register_file_buffer"] = Module["asm"]["lb"]).apply(null, arguments);
+          return (_duckdb_web_fs_register_file_buffer = Module["_duckdb_web_fs_register_file_buffer"] = Module["asm"]["ab"]).apply(null, arguments);
         };
         var _duckdb_web_copy_file_to_buffer = Module["_duckdb_web_copy_file_to_buffer"] = function() {
-          return (_duckdb_web_copy_file_to_buffer = Module["_duckdb_web_copy_file_to_buffer"] = Module["asm"]["mb"]).apply(null, arguments);
+          return (_duckdb_web_copy_file_to_buffer = Module["_duckdb_web_copy_file_to_buffer"] = Module["asm"]["bb"]).apply(null, arguments);
         };
         var _duckdb_web_copy_file_to_path = Module["_duckdb_web_copy_file_to_path"] = function() {
-          return (_duckdb_web_copy_file_to_path = Module["_duckdb_web_copy_file_to_path"] = Module["asm"]["nb"]).apply(null, arguments);
+          return (_duckdb_web_copy_file_to_path = Module["_duckdb_web_copy_file_to_path"] = Module["asm"]["cb"]).apply(null, arguments);
         };
         var _duckdb_web_get_version = Module["_duckdb_web_get_version"] = function() {
-          return (_duckdb_web_get_version = Module["_duckdb_web_get_version"] = Module["asm"]["ob"]).apply(null, arguments);
+          return (_duckdb_web_get_version = Module["_duckdb_web_get_version"] = Module["asm"]["db"]).apply(null, arguments);
         };
         var _duckdb_web_get_feature_flags = Module["_duckdb_web_get_feature_flags"] = function() {
-          return (_duckdb_web_get_feature_flags = Module["_duckdb_web_get_feature_flags"] = Module["asm"]["pb"]).apply(null, arguments);
+          return (_duckdb_web_get_feature_flags = Module["_duckdb_web_get_feature_flags"] = Module["asm"]["eb"]).apply(null, arguments);
         };
         var _duckdb_web_tokenize = Module["_duckdb_web_tokenize"] = function() {
-          return (_duckdb_web_tokenize = Module["_duckdb_web_tokenize"] = Module["asm"]["qb"]).apply(null, arguments);
+          return (_duckdb_web_tokenize = Module["_duckdb_web_tokenize"] = Module["asm"]["fb"]).apply(null, arguments);
         };
         var _duckdb_web_udf_scalar_create = Module["_duckdb_web_udf_scalar_create"] = function() {
-          return (_duckdb_web_udf_scalar_create = Module["_duckdb_web_udf_scalar_create"] = Module["asm"]["rb"]).apply(null, arguments);
+          return (_duckdb_web_udf_scalar_create = Module["_duckdb_web_udf_scalar_create"] = Module["asm"]["gb"]).apply(null, arguments);
         };
         var _duckdb_web_prepared_create = Module["_duckdb_web_prepared_create"] = function() {
-          return (_duckdb_web_prepared_create = Module["_duckdb_web_prepared_create"] = Module["asm"]["sb"]).apply(null, arguments);
+          return (_duckdb_web_prepared_create = Module["_duckdb_web_prepared_create"] = Module["asm"]["hb"]).apply(null, arguments);
         };
         var _duckdb_web_prepared_close = Module["_duckdb_web_prepared_close"] = function() {
-          return (_duckdb_web_prepared_close = Module["_duckdb_web_prepared_close"] = Module["asm"]["tb"]).apply(null, arguments);
+          return (_duckdb_web_prepared_close = Module["_duckdb_web_prepared_close"] = Module["asm"]["ib"]).apply(null, arguments);
         };
         var _duckdb_web_prepared_run = Module["_duckdb_web_prepared_run"] = function() {
-          return (_duckdb_web_prepared_run = Module["_duckdb_web_prepared_run"] = Module["asm"]["ub"]).apply(null, arguments);
+          return (_duckdb_web_prepared_run = Module["_duckdb_web_prepared_run"] = Module["asm"]["jb"]).apply(null, arguments);
         };
         var _duckdb_web_prepared_send = Module["_duckdb_web_prepared_send"] = function() {
-          return (_duckdb_web_prepared_send = Module["_duckdb_web_prepared_send"] = Module["asm"]["vb"]).apply(null, arguments);
+          return (_duckdb_web_prepared_send = Module["_duckdb_web_prepared_send"] = Module["asm"]["kb"]).apply(null, arguments);
         };
         var _duckdb_web_query_run = Module["_duckdb_web_query_run"] = function() {
-          return (_duckdb_web_query_run = Module["_duckdb_web_query_run"] = Module["asm"]["wb"]).apply(null, arguments);
+          return (_duckdb_web_query_run = Module["_duckdb_web_query_run"] = Module["asm"]["lb"]).apply(null, arguments);
         };
         var _duckdb_web_pending_query_start = Module["_duckdb_web_pending_query_start"] = function() {
-          return (_duckdb_web_pending_query_start = Module["_duckdb_web_pending_query_start"] = Module["asm"]["xb"]).apply(null, arguments);
+          return (_duckdb_web_pending_query_start = Module["_duckdb_web_pending_query_start"] = Module["asm"]["mb"]).apply(null, arguments);
         };
         var _duckdb_web_pending_query_poll = Module["_duckdb_web_pending_query_poll"] = function() {
-          return (_duckdb_web_pending_query_poll = Module["_duckdb_web_pending_query_poll"] = Module["asm"]["yb"]).apply(null, arguments);
+          return (_duckdb_web_pending_query_poll = Module["_duckdb_web_pending_query_poll"] = Module["asm"]["nb"]).apply(null, arguments);
         };
         var _duckdb_web_pending_query_cancel = Module["_duckdb_web_pending_query_cancel"] = function() {
-          return (_duckdb_web_pending_query_cancel = Module["_duckdb_web_pending_query_cancel"] = Module["asm"]["zb"]).apply(null, arguments);
+          return (_duckdb_web_pending_query_cancel = Module["_duckdb_web_pending_query_cancel"] = Module["asm"]["ob"]).apply(null, arguments);
         };
         var _duckdb_web_query_fetch_results = Module["_duckdb_web_query_fetch_results"] = function() {
-          return (_duckdb_web_query_fetch_results = Module["_duckdb_web_query_fetch_results"] = Module["asm"]["Ab"]).apply(null, arguments);
+          return (_duckdb_web_query_fetch_results = Module["_duckdb_web_query_fetch_results"] = Module["asm"]["pb"]).apply(null, arguments);
         };
         var _duckdb_web_get_tablenames = Module["_duckdb_web_get_tablenames"] = function() {
-          return (_duckdb_web_get_tablenames = Module["_duckdb_web_get_tablenames"] = Module["asm"]["Bb"]).apply(null, arguments);
+          return (_duckdb_web_get_tablenames = Module["_duckdb_web_get_tablenames"] = Module["asm"]["qb"]).apply(null, arguments);
         };
         var _duckdb_web_insert_arrow_from_ipc_stream = Module["_duckdb_web_insert_arrow_from_ipc_stream"] = function() {
-          return (_duckdb_web_insert_arrow_from_ipc_stream = Module["_duckdb_web_insert_arrow_from_ipc_stream"] = Module["asm"]["Cb"]).apply(null, arguments);
+          return (_duckdb_web_insert_arrow_from_ipc_stream = Module["_duckdb_web_insert_arrow_from_ipc_stream"] = Module["asm"]["rb"]).apply(null, arguments);
         };
         var _duckdb_web_insert_csv_from_path = Module["_duckdb_web_insert_csv_from_path"] = function() {
-          return (_duckdb_web_insert_csv_from_path = Module["_duckdb_web_insert_csv_from_path"] = Module["asm"]["Db"]).apply(null, arguments);
+          return (_duckdb_web_insert_csv_from_path = Module["_duckdb_web_insert_csv_from_path"] = Module["asm"]["sb"]).apply(null, arguments);
         };
         var _duckdb_web_insert_json_from_path = Module["_duckdb_web_insert_json_from_path"] = function() {
-          return (_duckdb_web_insert_json_from_path = Module["_duckdb_web_insert_json_from_path"] = Module["asm"]["Eb"]).apply(null, arguments);
+          return (_duckdb_web_insert_json_from_path = Module["_duckdb_web_insert_json_from_path"] = Module["asm"]["tb"]).apply(null, arguments);
         };
         var ___errno_location = function() {
           return (___errno_location = Module["asm"]["__errno_location"]).apply(null, arguments);
         };
         var _htonl = function() {
-          return (_htonl = Module["asm"]["Fb"]).apply(null, arguments);
+          return (_htonl = Module["asm"]["ub"]).apply(null, arguments);
         };
         var _htons = function() {
-          return (_htons = Module["asm"]["Gb"]).apply(null, arguments);
+          return (_htons = Module["asm"]["vb"]).apply(null, arguments);
         };
         var _ntohs = function() {
-          return (_ntohs = Module["asm"]["Hb"]).apply(null, arguments);
+          return (_ntohs = Module["asm"]["wb"]).apply(null, arguments);
         };
         var _malloc = Module["_malloc"] = function() {
-          return (_malloc = Module["_malloc"] = Module["asm"]["Ib"]).apply(null, arguments);
+          return (_malloc = Module["_malloc"] = Module["asm"]["xb"]).apply(null, arguments);
         };
         var _free = Module["_free"] = function() {
-          return (_free = Module["_free"] = Module["asm"]["Jb"]).apply(null, arguments);
+          return (_free = Module["_free"] = Module["asm"]["yb"]).apply(null, arguments);
         };
         var stackSave = function() {
-          return (stackSave = Module["asm"]["Kb"]).apply(null, arguments);
+          return (stackSave = Module["asm"]["zb"]).apply(null, arguments);
         };
         var stackRestore = function() {
-          return (stackRestore = Module["asm"]["Lb"]).apply(null, arguments);
+          return (stackRestore = Module["asm"]["Ab"]).apply(null, arguments);
         };
         var stackAlloc = function() {
-          return (stackAlloc = Module["asm"]["Mb"]).apply(null, arguments);
+          return (stackAlloc = Module["asm"]["Bb"]).apply(null, arguments);
         };
         var ___cxa_is_pointer_type = function() {
-          return (___cxa_is_pointer_type = Module["asm"]["Nb"]).apply(null, arguments);
+          return (___cxa_is_pointer_type = Module["asm"]["Cb"]).apply(null, arguments);
         };
         Module["stackAlloc"] = stackAlloc;
         Module["stackSave"] = stackSave;
@@ -7739,10 +7745,10 @@ var require_duckdb_eh = __commonJS({
           function receiveInstance(instance, module3) {
             var exports2 = instance.exports;
             Module["asm"] = exports2;
-            wasmMemory = Module["asm"]["Qa"];
+            wasmMemory = Module["asm"]["Fa"];
             updateMemoryViews();
-            wasmTable = Module["asm"]["Ta"];
-            addOnInit(Module["asm"]["Ra"]);
+            wasmTable = Module["asm"]["Ia"];
+            addOnInit(Module["asm"]["Ga"]);
             removeRunDependency("wasm-instantiate");
             return exports2;
           }
@@ -8963,46 +8969,6 @@ var require_duckdb_eh = __commonJS({
         function _strftime_l(s, maxsize, format, tm, loc) {
           return _strftime(s, maxsize, format, tm);
         }
-        function _ucnv_close_64() {
-          err("missing function: ucnv_close_64");
-          abort(-1);
-        }
-        function _ucnv_convertEx_64() {
-          err("missing function: ucnv_convertEx_64");
-          abort(-1);
-        }
-        function _ucnv_open_64() {
-          err("missing function: ucnv_open_64");
-          abort(-1);
-        }
-        function _ucnv_toAlgorithmic_64() {
-          err("missing function: ucnv_toAlgorithmic_64");
-          abort(-1);
-        }
-        function _ucsdet_close_64() {
-          err("missing function: ucsdet_close_64");
-          abort(-1);
-        }
-        function _ucsdet_detect_64() {
-          err("missing function: ucsdet_detect_64");
-          abort(-1);
-        }
-        function _ucsdet_getConfidence_64() {
-          err("missing function: ucsdet_getConfidence_64");
-          abort(-1);
-        }
-        function _ucsdet_getName_64() {
-          err("missing function: ucsdet_getName_64");
-          abort(-1);
-        }
-        function _ucsdet_open_64() {
-          err("missing function: ucsdet_open_64");
-          abort(-1);
-        }
-        function _ucsdet_setText_64() {
-          err("missing function: ucsdet_setText_64");
-          abort(-1);
-        }
         function _unzClose() {
           err("missing function: unzClose");
           abort(-1);
@@ -9033,10 +8999,6 @@ var require_duckdb_eh = __commonJS({
         }
         function _unzLocateFile() {
           err("missing function: unzLocateFile");
-          abort(-1);
-        }
-        function _unzOpen() {
-          err("missing function: unzOpen");
           abort(-1);
         }
         function _unzOpen2() {
@@ -9124,157 +9086,157 @@ var require_duckdb_eh = __commonJS({
           ret = onDone(ret);
           return ret;
         }
-        var wasmImports = { "f": _XML_GetBuffer, "V": _XML_GetErrorCode, "W": _XML_Parse, "m": _XML_ParseBuffer, "o": _XML_ParserCreate, "b": _XML_ParserFree, "B": _XML_ResumeParser, "d": _XML_SetCharacterDataHandler, "a": _XML_SetElementHandler, "n": _XML_SetUserData, "i": _XML_StopParser, "La": ___dlsym, "Ga": ___syscall__newselect, "Ka": ___syscall_bind, "Ja": ___syscall_connect, "Ca": ___syscall_faccessat, "c": ___syscall_fcntl64, "Ba": ___syscall_fstat64, "O": ___syscall_ftruncate64, "wa": ___syscall_getdents64, "Ea": ___syscall_getpeername, "Fa": ___syscall_getsockopt, "L": ___syscall_ioctl, "ya": ___syscall_lstat64, "xa": ___syscall_mkdirat, "za": ___syscall_newfstatat, "M": ___syscall_openat, "Ha": ___syscall_recvfrom, "ua": ___syscall_renameat, "G": ___syscall_rmdir, "Ia": ___syscall_sendto, "I": ___syscall_socket, "Aa": ___syscall_stat64, "H": ___syscall_unlinkat, "S": __emscripten_get_now_is_monotonic, "ea": __localtime_js, "fa": __tzset_js, "j": _abort, "Ma": _dlopen, "ma": _duckdb_web_fs_directory_create, "na": _duckdb_web_fs_directory_exists, "ja": _duckdb_web_fs_directory_list_files, "ka": _duckdb_web_fs_directory_remove, "E": _duckdb_web_fs_file_close, "ha": _duckdb_web_fs_file_exists, "N": _duckdb_web_fs_file_get_last_modified_time, "ia": _duckdb_web_fs_file_move, "pa": _duckdb_web_fs_file_open, "p": _duckdb_web_fs_file_read, "oa": _duckdb_web_fs_file_truncate, "F": _duckdb_web_fs_file_write, "qa": _duckdb_web_fs_get_default_data_protocol, "ga": _duckdb_web_fs_glob, "D": _duckdb_web_test_platform_feature, "ra": _duckdb_web_udf_scalar_call, "A": _emscripten_date_now, "X": _emscripten_get_heap_max, "g": _emscripten_get_now, "Oa": _emscripten_memcpy_big, "Pa": _emscripten_resize_heap, "la": _environ_get, "ta": _environ_sizes_get, "k": _fd_close, "Na": _fd_fdstat_get, "Q": _fd_pread, "P": _fd_pwrite, "K": _fd_read, "R": _fd_seek, "va": _fd_sync, "v": _fd_write, "J": _getaddrinfo, "sa": _getentropy, "Da": _getnameinfo, "ba": _strftime_l, "e": _ucnv_close_64, "Y": _ucnv_convertEx_64, "u": _ucnv_open_64, "Z": _ucnv_toAlgorithmic_64, "C": _ucsdet_close_64, "aa": _ucsdet_detect_64, "$": _ucsdet_getConfidence_64, "_": _ucsdet_getName_64, "da": _ucsdet_open_64, "ca": _ucsdet_setText_64, "h": _unzClose, "t": _unzCloseCurrentFile, "y": _unzGetCurrentFileInfo, "q": _unzGetCurrentFileInfo64, "U": _unzGetGlobalInfo, "z": _unzGoToFirstFile, "x": _unzGoToNextFile, "s": _unzLocateFile, "w": _unzOpen, "T": _unzOpen2, "r": _unzOpenCurrentFile, "l": _unzReadCurrentFile };
+        var wasmImports = { "f": _XML_GetBuffer, "R": _XML_GetErrorCode, "T": _XML_Parse, "l": _XML_ParseBuffer, "n": _XML_ParserCreate, "b": _XML_ParserFree, "z": _XML_ResumeParser, "e": _XML_SetCharacterDataHandler, "a": _XML_SetElementHandler, "m": _XML_SetUserData, "i": _XML_StopParser, "Aa": ___dlsym, "va": ___syscall__newselect, "za": ___syscall_bind, "ya": ___syscall_connect, "ra": ___syscall_faccessat, "c": ___syscall_fcntl64, "qa": ___syscall_fstat64, "M": ___syscall_ftruncate64, "la": ___syscall_getdents64, "ta": ___syscall_getpeername, "ua": ___syscall_getsockopt, "I": ___syscall_ioctl, "na": ___syscall_lstat64, "ma": ___syscall_mkdirat, "oa": ___syscall_newfstatat, "J": ___syscall_openat, "wa": ___syscall_recvfrom, "ja": ___syscall_renameat, "D": ___syscall_rmdir, "xa": ___syscall_sendto, "F": ___syscall_socket, "pa": ___syscall_stat64, "E": ___syscall_unlinkat, "K": __emscripten_get_now_is_monotonic, "V": __localtime_js, "W": __tzset_js, "d": _abort, "Ba": _dlopen, "ba": _duckdb_web_fs_directory_create, "ca": _duckdb_web_fs_directory_exists, "_": _duckdb_web_fs_directory_list_files, "$": _duckdb_web_fs_directory_remove, "B": _duckdb_web_fs_file_close, "Y": _duckdb_web_fs_file_exists, "L": _duckdb_web_fs_file_get_last_modified_time, "Z": _duckdb_web_fs_file_move, "ea": _duckdb_web_fs_file_open, "o": _duckdb_web_fs_file_read, "da": _duckdb_web_fs_file_truncate, "C": _duckdb_web_fs_file_write, "fa": _duckdb_web_fs_get_default_data_protocol, "X": _duckdb_web_fs_glob, "A": _duckdb_web_test_platform_feature, "ga": _duckdb_web_udf_scalar_call, "u": _emscripten_date_now, "S": _emscripten_get_heap_max, "g": _emscripten_get_now, "Da": _emscripten_memcpy_big, "Ea": _emscripten_resize_heap, "aa": _environ_get, "ia": _environ_sizes_get, "j": _fd_close, "Ca": _fd_fdstat_get, "O": _fd_pread, "N": _fd_pwrite, "H": _fd_read, "P": _fd_seek, "ka": _fd_sync, "t": _fd_write, "G": _getaddrinfo, "ha": _getentropy, "sa": _getnameinfo, "U": _strftime_l, "h": _unzClose, "s": _unzCloseCurrentFile, "x": _unzGetCurrentFileInfo, "p": _unzGetCurrentFileInfo64, "Q": _unzGetGlobalInfo, "y": _unzGoToFirstFile, "w": _unzGoToNextFile, "r": _unzLocateFile, "v": _unzOpen2, "q": _unzOpenCurrentFile, "k": _unzReadCurrentFile };
         var asm = createWasm();
         var ___wasm_call_ctors = function() {
-          return (___wasm_call_ctors = Module["asm"]["Ra"]).apply(null, arguments);
+          return (___wasm_call_ctors = Module["asm"]["Ga"]).apply(null, arguments);
         };
         var _main = Module["_main"] = function() {
-          return (_main = Module["_main"] = Module["asm"]["Sa"]).apply(null, arguments);
+          return (_main = Module["_main"] = Module["asm"]["Ha"]).apply(null, arguments);
         };
         var _duckdb_web_fs_glob_add_path = Module["_duckdb_web_fs_glob_add_path"] = function() {
-          return (_duckdb_web_fs_glob_add_path = Module["_duckdb_web_fs_glob_add_path"] = Module["asm"]["Ua"]).apply(null, arguments);
+          return (_duckdb_web_fs_glob_add_path = Module["_duckdb_web_fs_glob_add_path"] = Module["asm"]["Ja"]).apply(null, arguments);
         };
         var _duckdb_web_clear_response = Module["_duckdb_web_clear_response"] = function() {
-          return (_duckdb_web_clear_response = Module["_duckdb_web_clear_response"] = Module["asm"]["Va"]).apply(null, arguments);
+          return (_duckdb_web_clear_response = Module["_duckdb_web_clear_response"] = Module["asm"]["Ka"]).apply(null, arguments);
         };
         var _duckdb_web_fail_with = Module["_duckdb_web_fail_with"] = function() {
-          return (_duckdb_web_fail_with = Module["_duckdb_web_fail_with"] = Module["asm"]["Wa"]).apply(null, arguments);
+          return (_duckdb_web_fail_with = Module["_duckdb_web_fail_with"] = Module["asm"]["La"]).apply(null, arguments);
         };
         var _duckdb_web_reset = Module["_duckdb_web_reset"] = function() {
-          return (_duckdb_web_reset = Module["_duckdb_web_reset"] = Module["asm"]["Xa"]).apply(null, arguments);
+          return (_duckdb_web_reset = Module["_duckdb_web_reset"] = Module["asm"]["Ma"]).apply(null, arguments);
         };
         var _duckdb_web_connect = Module["_duckdb_web_connect"] = function() {
-          return (_duckdb_web_connect = Module["_duckdb_web_connect"] = Module["asm"]["Ya"]).apply(null, arguments);
+          return (_duckdb_web_connect = Module["_duckdb_web_connect"] = Module["asm"]["Na"]).apply(null, arguments);
         };
         var _duckdb_web_disconnect = Module["_duckdb_web_disconnect"] = function() {
-          return (_duckdb_web_disconnect = Module["_duckdb_web_disconnect"] = Module["asm"]["Za"]).apply(null, arguments);
+          return (_duckdb_web_disconnect = Module["_duckdb_web_disconnect"] = Module["asm"]["Oa"]).apply(null, arguments);
         };
         var _duckdb_web_flush_files = Module["_duckdb_web_flush_files"] = function() {
-          return (_duckdb_web_flush_files = Module["_duckdb_web_flush_files"] = Module["asm"]["_a"]).apply(null, arguments);
+          return (_duckdb_web_flush_files = Module["_duckdb_web_flush_files"] = Module["asm"]["Pa"]).apply(null, arguments);
         };
         var _duckdb_web_flush_file = Module["_duckdb_web_flush_file"] = function() {
-          return (_duckdb_web_flush_file = Module["_duckdb_web_flush_file"] = Module["asm"]["$a"]).apply(null, arguments);
+          return (_duckdb_web_flush_file = Module["_duckdb_web_flush_file"] = Module["asm"]["Qa"]).apply(null, arguments);
         };
         var _duckdb_web_open = Module["_duckdb_web_open"] = function() {
-          return (_duckdb_web_open = Module["_duckdb_web_open"] = Module["asm"]["ab"]).apply(null, arguments);
+          return (_duckdb_web_open = Module["_duckdb_web_open"] = Module["asm"]["Ra"]).apply(null, arguments);
         };
         var _duckdb_web_get_global_file_info = Module["_duckdb_web_get_global_file_info"] = function() {
-          return (_duckdb_web_get_global_file_info = Module["_duckdb_web_get_global_file_info"] = Module["asm"]["bb"]).apply(null, arguments);
+          return (_duckdb_web_get_global_file_info = Module["_duckdb_web_get_global_file_info"] = Module["asm"]["Sa"]).apply(null, arguments);
         };
         var _duckdb_web_collect_file_stats = Module["_duckdb_web_collect_file_stats"] = function() {
-          return (_duckdb_web_collect_file_stats = Module["_duckdb_web_collect_file_stats"] = Module["asm"]["cb"]).apply(null, arguments);
+          return (_duckdb_web_collect_file_stats = Module["_duckdb_web_collect_file_stats"] = Module["asm"]["Ta"]).apply(null, arguments);
         };
         var _duckdb_web_export_file_stats = Module["_duckdb_web_export_file_stats"] = function() {
-          return (_duckdb_web_export_file_stats = Module["_duckdb_web_export_file_stats"] = Module["asm"]["db"]).apply(null, arguments);
+          return (_duckdb_web_export_file_stats = Module["_duckdb_web_export_file_stats"] = Module["asm"]["Ua"]).apply(null, arguments);
         };
         var _duckdb_web_fs_drop_file = Module["_duckdb_web_fs_drop_file"] = function() {
-          return (_duckdb_web_fs_drop_file = Module["_duckdb_web_fs_drop_file"] = Module["asm"]["eb"]).apply(null, arguments);
+          return (_duckdb_web_fs_drop_file = Module["_duckdb_web_fs_drop_file"] = Module["asm"]["Va"]).apply(null, arguments);
         };
         var _duckdb_web_fs_drop_files = Module["_duckdb_web_fs_drop_files"] = function() {
-          return (_duckdb_web_fs_drop_files = Module["_duckdb_web_fs_drop_files"] = Module["asm"]["fb"]).apply(null, arguments);
+          return (_duckdb_web_fs_drop_files = Module["_duckdb_web_fs_drop_files"] = Module["asm"]["Wa"]).apply(null, arguments);
         };
         var _duckdb_web_fs_glob_file_infos = Module["_duckdb_web_fs_glob_file_infos"] = function() {
-          return (_duckdb_web_fs_glob_file_infos = Module["_duckdb_web_fs_glob_file_infos"] = Module["asm"]["gb"]).apply(null, arguments);
+          return (_duckdb_web_fs_glob_file_infos = Module["_duckdb_web_fs_glob_file_infos"] = Module["asm"]["Xa"]).apply(null, arguments);
         };
         var _duckdb_web_fs_get_file_info_by_id = Module["_duckdb_web_fs_get_file_info_by_id"] = function() {
-          return (_duckdb_web_fs_get_file_info_by_id = Module["_duckdb_web_fs_get_file_info_by_id"] = Module["asm"]["hb"]).apply(null, arguments);
+          return (_duckdb_web_fs_get_file_info_by_id = Module["_duckdb_web_fs_get_file_info_by_id"] = Module["asm"]["Ya"]).apply(null, arguments);
         };
         var _duckdb_web_fs_get_file_info_by_name = Module["_duckdb_web_fs_get_file_info_by_name"] = function() {
-          return (_duckdb_web_fs_get_file_info_by_name = Module["_duckdb_web_fs_get_file_info_by_name"] = Module["asm"]["ib"]).apply(null, arguments);
+          return (_duckdb_web_fs_get_file_info_by_name = Module["_duckdb_web_fs_get_file_info_by_name"] = Module["asm"]["Za"]).apply(null, arguments);
         };
         var _duckdb_web_fs_register_file_url = Module["_duckdb_web_fs_register_file_url"] = function() {
-          return (_duckdb_web_fs_register_file_url = Module["_duckdb_web_fs_register_file_url"] = Module["asm"]["jb"]).apply(null, arguments);
+          return (_duckdb_web_fs_register_file_url = Module["_duckdb_web_fs_register_file_url"] = Module["asm"]["_a"]).apply(null, arguments);
         };
         var _duckdb_web_fs_register_file_buffer = Module["_duckdb_web_fs_register_file_buffer"] = function() {
-          return (_duckdb_web_fs_register_file_buffer = Module["_duckdb_web_fs_register_file_buffer"] = Module["asm"]["kb"]).apply(null, arguments);
+          return (_duckdb_web_fs_register_file_buffer = Module["_duckdb_web_fs_register_file_buffer"] = Module["asm"]["$a"]).apply(null, arguments);
         };
         var _duckdb_web_copy_file_to_buffer = Module["_duckdb_web_copy_file_to_buffer"] = function() {
-          return (_duckdb_web_copy_file_to_buffer = Module["_duckdb_web_copy_file_to_buffer"] = Module["asm"]["lb"]).apply(null, arguments);
+          return (_duckdb_web_copy_file_to_buffer = Module["_duckdb_web_copy_file_to_buffer"] = Module["asm"]["ab"]).apply(null, arguments);
         };
         var _duckdb_web_copy_file_to_path = Module["_duckdb_web_copy_file_to_path"] = function() {
-          return (_duckdb_web_copy_file_to_path = Module["_duckdb_web_copy_file_to_path"] = Module["asm"]["mb"]).apply(null, arguments);
+          return (_duckdb_web_copy_file_to_path = Module["_duckdb_web_copy_file_to_path"] = Module["asm"]["bb"]).apply(null, arguments);
         };
         var _duckdb_web_get_version = Module["_duckdb_web_get_version"] = function() {
-          return (_duckdb_web_get_version = Module["_duckdb_web_get_version"] = Module["asm"]["nb"]).apply(null, arguments);
+          return (_duckdb_web_get_version = Module["_duckdb_web_get_version"] = Module["asm"]["cb"]).apply(null, arguments);
         };
         var _duckdb_web_get_feature_flags = Module["_duckdb_web_get_feature_flags"] = function() {
-          return (_duckdb_web_get_feature_flags = Module["_duckdb_web_get_feature_flags"] = Module["asm"]["ob"]).apply(null, arguments);
+          return (_duckdb_web_get_feature_flags = Module["_duckdb_web_get_feature_flags"] = Module["asm"]["db"]).apply(null, arguments);
         };
         var _duckdb_web_tokenize = Module["_duckdb_web_tokenize"] = function() {
-          return (_duckdb_web_tokenize = Module["_duckdb_web_tokenize"] = Module["asm"]["pb"]).apply(null, arguments);
+          return (_duckdb_web_tokenize = Module["_duckdb_web_tokenize"] = Module["asm"]["eb"]).apply(null, arguments);
         };
         var _duckdb_web_udf_scalar_create = Module["_duckdb_web_udf_scalar_create"] = function() {
-          return (_duckdb_web_udf_scalar_create = Module["_duckdb_web_udf_scalar_create"] = Module["asm"]["qb"]).apply(null, arguments);
+          return (_duckdb_web_udf_scalar_create = Module["_duckdb_web_udf_scalar_create"] = Module["asm"]["fb"]).apply(null, arguments);
         };
         var _duckdb_web_prepared_create = Module["_duckdb_web_prepared_create"] = function() {
-          return (_duckdb_web_prepared_create = Module["_duckdb_web_prepared_create"] = Module["asm"]["rb"]).apply(null, arguments);
+          return (_duckdb_web_prepared_create = Module["_duckdb_web_prepared_create"] = Module["asm"]["gb"]).apply(null, arguments);
         };
         var _duckdb_web_prepared_close = Module["_duckdb_web_prepared_close"] = function() {
-          return (_duckdb_web_prepared_close = Module["_duckdb_web_prepared_close"] = Module["asm"]["sb"]).apply(null, arguments);
+          return (_duckdb_web_prepared_close = Module["_duckdb_web_prepared_close"] = Module["asm"]["hb"]).apply(null, arguments);
         };
         var _duckdb_web_prepared_run = Module["_duckdb_web_prepared_run"] = function() {
-          return (_duckdb_web_prepared_run = Module["_duckdb_web_prepared_run"] = Module["asm"]["tb"]).apply(null, arguments);
+          return (_duckdb_web_prepared_run = Module["_duckdb_web_prepared_run"] = Module["asm"]["ib"]).apply(null, arguments);
         };
         var _duckdb_web_prepared_send = Module["_duckdb_web_prepared_send"] = function() {
-          return (_duckdb_web_prepared_send = Module["_duckdb_web_prepared_send"] = Module["asm"]["ub"]).apply(null, arguments);
+          return (_duckdb_web_prepared_send = Module["_duckdb_web_prepared_send"] = Module["asm"]["jb"]).apply(null, arguments);
         };
         var _duckdb_web_query_run = Module["_duckdb_web_query_run"] = function() {
-          return (_duckdb_web_query_run = Module["_duckdb_web_query_run"] = Module["asm"]["vb"]).apply(null, arguments);
+          return (_duckdb_web_query_run = Module["_duckdb_web_query_run"] = Module["asm"]["kb"]).apply(null, arguments);
         };
         var _duckdb_web_pending_query_start = Module["_duckdb_web_pending_query_start"] = function() {
-          return (_duckdb_web_pending_query_start = Module["_duckdb_web_pending_query_start"] = Module["asm"]["wb"]).apply(null, arguments);
+          return (_duckdb_web_pending_query_start = Module["_duckdb_web_pending_query_start"] = Module["asm"]["lb"]).apply(null, arguments);
         };
         var _duckdb_web_pending_query_poll = Module["_duckdb_web_pending_query_poll"] = function() {
-          return (_duckdb_web_pending_query_poll = Module["_duckdb_web_pending_query_poll"] = Module["asm"]["xb"]).apply(null, arguments);
+          return (_duckdb_web_pending_query_poll = Module["_duckdb_web_pending_query_poll"] = Module["asm"]["mb"]).apply(null, arguments);
         };
         var _duckdb_web_pending_query_cancel = Module["_duckdb_web_pending_query_cancel"] = function() {
-          return (_duckdb_web_pending_query_cancel = Module["_duckdb_web_pending_query_cancel"] = Module["asm"]["yb"]).apply(null, arguments);
+          return (_duckdb_web_pending_query_cancel = Module["_duckdb_web_pending_query_cancel"] = Module["asm"]["nb"]).apply(null, arguments);
         };
         var _duckdb_web_query_fetch_results = Module["_duckdb_web_query_fetch_results"] = function() {
-          return (_duckdb_web_query_fetch_results = Module["_duckdb_web_query_fetch_results"] = Module["asm"]["zb"]).apply(null, arguments);
+          return (_duckdb_web_query_fetch_results = Module["_duckdb_web_query_fetch_results"] = Module["asm"]["ob"]).apply(null, arguments);
         };
         var _duckdb_web_get_tablenames = Module["_duckdb_web_get_tablenames"] = function() {
-          return (_duckdb_web_get_tablenames = Module["_duckdb_web_get_tablenames"] = Module["asm"]["Ab"]).apply(null, arguments);
+          return (_duckdb_web_get_tablenames = Module["_duckdb_web_get_tablenames"] = Module["asm"]["pb"]).apply(null, arguments);
         };
         var _duckdb_web_insert_arrow_from_ipc_stream = Module["_duckdb_web_insert_arrow_from_ipc_stream"] = function() {
-          return (_duckdb_web_insert_arrow_from_ipc_stream = Module["_duckdb_web_insert_arrow_from_ipc_stream"] = Module["asm"]["Bb"]).apply(null, arguments);
+          return (_duckdb_web_insert_arrow_from_ipc_stream = Module["_duckdb_web_insert_arrow_from_ipc_stream"] = Module["asm"]["qb"]).apply(null, arguments);
         };
         var _duckdb_web_insert_csv_from_path = Module["_duckdb_web_insert_csv_from_path"] = function() {
-          return (_duckdb_web_insert_csv_from_path = Module["_duckdb_web_insert_csv_from_path"] = Module["asm"]["Cb"]).apply(null, arguments);
+          return (_duckdb_web_insert_csv_from_path = Module["_duckdb_web_insert_csv_from_path"] = Module["asm"]["rb"]).apply(null, arguments);
         };
         var _duckdb_web_insert_json_from_path = Module["_duckdb_web_insert_json_from_path"] = function() {
-          return (_duckdb_web_insert_json_from_path = Module["_duckdb_web_insert_json_from_path"] = Module["asm"]["Db"]).apply(null, arguments);
+          return (_duckdb_web_insert_json_from_path = Module["_duckdb_web_insert_json_from_path"] = Module["asm"]["sb"]).apply(null, arguments);
         };
         var ___errno_location = function() {
           return (___errno_location = Module["asm"]["__errno_location"]).apply(null, arguments);
         };
         var _htonl = function() {
-          return (_htonl = Module["asm"]["Eb"]).apply(null, arguments);
+          return (_htonl = Module["asm"]["tb"]).apply(null, arguments);
         };
         var _htons = function() {
-          return (_htons = Module["asm"]["Fb"]).apply(null, arguments);
+          return (_htons = Module["asm"]["ub"]).apply(null, arguments);
         };
         var _ntohs = function() {
-          return (_ntohs = Module["asm"]["Gb"]).apply(null, arguments);
+          return (_ntohs = Module["asm"]["vb"]).apply(null, arguments);
         };
         var _malloc = Module["_malloc"] = function() {
-          return (_malloc = Module["_malloc"] = Module["asm"]["Hb"]).apply(null, arguments);
+          return (_malloc = Module["_malloc"] = Module["asm"]["wb"]).apply(null, arguments);
         };
         var _free = Module["_free"] = function() {
-          return (_free = Module["_free"] = Module["asm"]["Ib"]).apply(null, arguments);
+          return (_free = Module["_free"] = Module["asm"]["xb"]).apply(null, arguments);
         };
         var ___trap = function() {
-          return (___trap = Module["asm"]["Jb"]).apply(null, arguments);
+          return (___trap = Module["asm"]["yb"]).apply(null, arguments);
         };
         var stackSave = function() {
-          return (stackSave = Module["asm"]["Kb"]).apply(null, arguments);
+          return (stackSave = Module["asm"]["zb"]).apply(null, arguments);
         };
         var stackRestore = function() {
-          return (stackRestore = Module["asm"]["Lb"]).apply(null, arguments);
+          return (stackRestore = Module["asm"]["Ab"]).apply(null, arguments);
         };
         var stackAlloc = function() {
-          return (stackAlloc = Module["asm"]["Mb"]).apply(null, arguments);
+          return (stackAlloc = Module["asm"]["Bb"]).apply(null, arguments);
         };
         Module["stackAlloc"] = stackAlloc;
         Module["stackSave"] = stackSave;
