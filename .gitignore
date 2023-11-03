@@ -1,3 +1,7 @@
+# Personal Config
+rsync.config
+.vscode
+
 # Log
 *.log
 
