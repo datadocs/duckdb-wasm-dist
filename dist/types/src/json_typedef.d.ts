@@ -11,7 +11,7 @@ export interface SQLType {
     fields?: SQLField[];
 }
 export declare function arrowToSQLType(type: arrow.DataType): SQLType;
-export declare type SQLField = SQLType & {
+export type SQLField = SQLType & {
     name: string;
 };
 export declare function arrowToSQLField(name: string, type: arrow.DataType): SQLField;

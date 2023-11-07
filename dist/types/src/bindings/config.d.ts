@@ -54,4 +54,12 @@ export interface DuckDBConfig {
      * The filesystem config
      */
     filesystem?: DuckDBFilesystemConfig;
+    /**
+     * Checkpoint when WAL reaches this size (default: 16MB)
+     */
+    checkpointWALSize?: number;
+    /**
+     * Force checkpoint when CHECKPOINT is called or on shutdown, even if no changes have been made
+     */
+    forceCheckpoint?: boolean;
 }

@@ -57,6 +57,7 @@ export declare class AsyncDuckDB implements AsyncDuckDBBindings {
     dropFiles(): Promise<null>;
     /** Flush all files */
     flushFiles(): Promise<null>;
+    closeFile(name: string): Promise<boolean>;
     /** Open the database */
     instantiate(mainModuleURL: string, pthreadWorkerURL?: string | null, progress?: (progress: InstantiationProgress) => void): Promise<null>;
     /** Get the version */
@@ -104,7 +105,7 @@ export declare class AsyncDuckDB implements AsyncDuckDBBindings {
     /** Register a file buffer. */
     registerFileBuffer(name: string, buffer: Uint8Array): Promise<void>;
     /** Register a file handle. */
-    registerFileHandle<HandleType>(name: string, handle: HandleType, protocol: DuckDBDataProtocol, directIO: boolean): Promise<void>;
+    registerFileHandle(name: string, handle: any, protocol: DuckDBDataProtocol, directIO: boolean): Promise<void>;
     /** Enable file statistics */
     collectFileStatistics(name: string, enable: boolean): Promise<void>;
     /** Export file statistics */

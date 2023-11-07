@@ -1,5 +1,5 @@
 import { DuckDBBindings } from '../bindings';
-import { WorkerResponseVariant, WorkerRequestVariant } from './worker_request';
+import { WorkerResponseVariant, WorkerRequestVariant, WorkerResponseTypeVariant, WorkerResponseDataType } from './worker_request';
 import { Logger, LogEntryVariant } from '../log';
 import { InstantiationProgress } from '../bindings/progress';
 export declare abstract class AsyncDuckDBDispatcher implements Logger {
@@ -17,6 +17,7 @@ export declare abstract class AsyncDuckDBDispatcher implements Logger {
     protected sendOK(request: WorkerRequestVariant): void;
     /** Fail with an error */
     protected failWith(request: WorkerRequestVariant, e: Error): void;
+    protected sendRaw<RespType extends WorkerResponseTypeVariant>(request: WorkerRequestVariant, type: RespType, data: WorkerResponseDataType<RespType>): void;
     /** Process a request from the main thread */
     onMessage(request: WorkerRequestVariant): Promise<void>;
 }

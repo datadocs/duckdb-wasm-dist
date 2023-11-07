@@ -29,11 +29,12 @@ export interface DuckDBBindings {
     registerFileURL(name: string, url: string, proto: DuckDBDataProtocol, directIO: boolean): void;
     registerFileText(name: string, text: string): void;
     registerFileBuffer(name: string, buffer: Uint8Array): void;
-    registerFileHandle<HandleType>(name: string, handle: HandleType, protocol: DuckDBDataProtocol, directIO: boolean): void;
+    registerFileHandle<HandleType>(name: string, handle: HandleType, protocol: DuckDBDataProtocol, directIO: boolean): Promise<void>;
     globFiles(path: string): WebFile[];
     dropFile(name: string): void;
     dropFiles(): void;
     flushFiles(): void;
+    closeFile(name: string): boolean;
     copyFileToPath(name: string, path: string): void;
     copyFileToBuffer(name: string): Uint8Array;
     collectFileStatistics(file: string, enable: boolean): void;
