@@ -4,14 +4,15 @@ import { Logger } from '../log';
 import { InstantiationProgress } from './progress';
 import { DuckDBBindings } from './bindings_interface';
 import { DuckDBConnection } from './connection';
-import { DuckDBRuntime, DuckDBDataProtocol } from './runtime';
+import { DuckDBDataProtocol } from './runtime';
+import type { DuckDBRuntime } from './runtime';
 import { CSVInsertOptions, JSONInsertOptions, ArrowInsertOptions } from './insert_options';
 import { ScriptTokens } from './tokens';
 import { FileStatistics } from './file_stats';
 import { WebFile } from './web_file';
 import * as arrow from 'apache-arrow';
 declare global {
-    var DUCKDB_RUNTIME: any;
+    var DUCKDB_RUNTIME: DuckDBRuntime;
 }
 /** A DuckDB Feature */
 export declare enum DuckDBFeature {
@@ -104,7 +105,7 @@ export declare abstract class DuckDBBindingsBase implements DuckDBBindings {
     /** Register a file buffer */
     registerFileBuffer(name: string, buffer: Uint8Array): void;
     /** Register a file object URL */
-    registerFileHandle<HandleType>(name: string, handle: HandleType, protocol: DuckDBDataProtocol, directIO: boolean): void;
+    registerFileHandle<HandleType>(name: string, handle: HandleType, protocol: DuckDBDataProtocol, directIO: boolean): Promise<void>;
     /** Drop file */
     dropFile(name: string): void;
     /** Drop files */
@@ -115,6 +116,8 @@ export declare abstract class DuckDBBindingsBase implements DuckDBBindings {
     copyFileToPath(name: string, path: string): void;
     /** Write a file to a buffer */
     copyFileToBuffer(name: string): Uint8Array;
+    /** Close file (This method is used for explicitly clsoing OPFS file handle) */
+    closeFile(fileName: string): boolean;
     /** Enable tracking of file statistics */
     collectFileStatistics(file: string, enable: boolean): void;
     /** Export file statistics */
