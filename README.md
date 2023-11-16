@@ -12,7 +12,7 @@ pushd duckdb-wasm && ./scripts/datadocs_fast_rebuild.sh --duckdb --release; popd
 # Or you can build it by these commands:
 pushd duckdb-wasm &&
     ./scripts/wasm_build_lib.sh relsize eh &&
-    yarn workspace @duckdb/duckdb-wasm run build:release;
+    env KEEP_DEBUG_LOGS=1 yarn workspace @duckdb/duckdb-wasm run build:release;
 popd;
 ./rsync.sh
 ```
