@@ -86,6 +86,8 @@ export declare class AsyncDuckDB implements AsyncDuckDBBindings {
     fetchQueryResults(conn: ConnectionID): Promise<Uint8Array>;
     /** Get table names */
     getTableNames(conn: number, text: string): Promise<string[]>;
+    /** Get Ingest Schema for file */
+    ingestGetSchema(conn: number, fileName: string, path: string): Promise<string>;
     /** Prepare a statement and return its identifier */
     createPrepared(conn: number, text: string): Promise<number>;
     /** Close a prepared statement */

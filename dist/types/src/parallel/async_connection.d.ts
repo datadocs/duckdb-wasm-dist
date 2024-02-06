@@ -26,6 +26,8 @@ export declare class AsyncDuckDBConnection {
     cancelSent(): Promise<boolean>;
     /** Get table names */
     getTableNames(query: string): Promise<string[]>;
+    /** Get ingest schema for file */
+    ingestGetSchema(query: string, path: string): Promise<string>;
     /** Create a prepared statement */
     prepare<T extends {
         [key: string]: arrow.DataType;

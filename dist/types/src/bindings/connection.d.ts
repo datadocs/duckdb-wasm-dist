@@ -25,6 +25,8 @@ export declare class DuckDBConnection {
     cancelSent(): boolean;
     /** Get table names */
     getTableNames(query: string): string[];
+    /** Ingest get schema for file */
+    ingestGetSchema(fileName: string, path: string): string;
     /** Create a prepared statement */
     prepare<T extends {
         [key: string]: arrow.DataType;

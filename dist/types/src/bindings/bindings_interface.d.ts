@@ -18,6 +18,7 @@ export interface DuckDBBindings {
     cancelPendingQuery(conn: number): boolean;
     fetchQueryResults(conn: number): Uint8Array;
     getTableNames(conn: number, text: string): string[];
+    ingestGetSchema(conn: number, fileName: string, path: string): string;
     createPrepared(conn: number, text: string): number;
     closePrepared(conn: number, statement: number): void;
     runPrepared(conn: number, statement: number, params: any[]): Uint8Array;

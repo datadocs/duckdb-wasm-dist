@@ -80,6 +80,8 @@ export declare abstract class DuckDBBindingsBase implements DuckDBBindings {
     fetchQueryResults(conn: number): Uint8Array;
     /** Get table names */
     getTableNames(conn: number, text: string): string[];
+    /** Get Ingest Schema for a file */
+    ingestGetSchema(conn: number, fileName: string, path: string): string;
     /** Create a scalar function */
     createScalarFunction(conn: number, name: string, returns: arrow.DataType, func: (...args: any[]) => void): void;
     /** Prepare a statement and return its identifier */
