@@ -24,6 +24,7 @@ export interface DuckDBFilesystemConfig {
     /**
      * Allow falling back to full HTTP reads if the server does not support range requests.
      */
+    reliableHeadRequests?: boolean;
     allowFullHTTPReads?: boolean;
 }
 export declare enum DuckDBAccessMode {
@@ -62,4 +63,8 @@ export interface DuckDBConfig {
      * Force checkpoint when CHECKPOINT is called or on shutdown, even if no changes have been made
      */
     forceCheckpoint?: boolean;
+    /**
+     * Whether to allow unsigned extensions
+     */
+    allowUnsignedExtensions?: boolean;
 }

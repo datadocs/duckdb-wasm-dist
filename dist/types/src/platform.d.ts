@@ -1,6 +1,11 @@
 export declare const isNode: () => boolean;
 export declare const isFirefox: () => boolean;
 export declare const isSafari: () => boolean;
+/** Bundles have different characteristics:
+  * - MVP: minimum viable product (uses features from first stable version of WebAssembly standard)
+  * - EH: exception handling
+  * - COI: cross origin isolation
+  */
 export interface DuckDBBundles {
     mvp: {
         mainModule: string;

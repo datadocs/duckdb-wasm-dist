@@ -53,12 +53,14 @@ export interface DuckDBFileInfo {
     fileName: string;
     dataProtocol: DuckDBDataProtocol;
     dataUrl: string | null;
+    reliableHeadRequests?: boolean;
     allowFullHttpReads?: boolean;
     s3Config?: S3Config;
 }
 /** Global info for all files registered with DuckDB */
 export interface DuckDBGlobalFileInfo {
     cacheEpoch: number;
+    reliableHeadRequests?: boolean;
     allowFullHttpReads?: boolean;
     s3Config?: S3Config;
 }
