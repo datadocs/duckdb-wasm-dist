@@ -37,9 +37,9 @@
     "sideEffects": false,
     "browser": {
         "fs": false,
+        "os": false,
         "path": false,
         "perf_hooks": false,
-        "os": false,
         "worker_threads": false
     },
     "exports": {
