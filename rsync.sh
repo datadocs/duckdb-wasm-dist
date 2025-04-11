@@ -33,7 +33,8 @@ rsync_src=
 if test -f rsync.config; then
   echo "loading config from rsync.config";
   source rsync.config || throw "failed to load rsync.config";
-else
+fi
+if [ -n "$1" ]; then
   rsync_src="$1";
   if [ -z "$rsync_src" ] || [ "$rsync_src" == "-h" ] || [ "$rsync_src" == "--help" ];
   then usage;

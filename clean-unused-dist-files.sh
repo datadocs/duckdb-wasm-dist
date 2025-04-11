@@ -10,7 +10,7 @@ remove_dist_by_pattern() {
 main() {
     remove_dist_by_pattern 'tests-*'         # Test files
     remove_dist_by_pattern 'duckdb-node*'    # Node.js files
-    remove_dist_by_pattern '*-coi.*'         # coi files (pthread)
+    # remove_dist_by_pattern '*-coi.*'         # coi files (pthread)
     remove_dist_by_pattern '*-mvp.*'         # mvp files
     remove_dist_by_pattern '*-blocking.*'    # sync version
 }
