@@ -1,4 +1,5 @@
 dist
+.yarn
 
 # Personal Config
 rsync.config

@@ -2,7 +2,7 @@
 # shellcheck disable=SC2016
 # In bash, we can use ${variable%/} to remove the tailing '/' in variable
 
-target_dir="dist";
+target_dir="duckdb-wasm/dist";
 src_dir="packages/duckdb-wasm/dist"
 # rsync_opts=( --iconv=utf-8 --rsync-path=/usr/local/opt/rsync/bin/rsync )
 

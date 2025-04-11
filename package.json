@@ -1,67 +1,14 @@
 {
-    "name": "@datadocs/duckdb-wasm",
-    "version": "1.11.0",
-    "description": "DuckDB powered by WebAssembly",
+    "name": "@datadocs/duckdb-wasm-dist",
+    "version": "0.0.1",
+    "description": "A monorepo for publishing DuckDB WASM and testing it",
     "license": "MIT",
     "repository": {
         "type": "git",
         "url": "https://github.com/datadocs/duckdb-wasm.git"
     },
-    "keywords": [
-        "sql",
-        "duckdb",
-        "relational",
-        "database",
-        "data",
-        "query",
-        "wasm",
-        "analytics",
-        "olap",
-        "arrow",
-        "parquet",
-        "json",
-        "csv"
+    "workspaces": [
+        "duckdb-wasm"
     ],
-    "dependencies": {
-        "apache-arrow": "^11.0.0"
-    },
-    "files": [
-        "dist",
-        "!dist/types/test"
-    ],
-    "main": "dist/duckdb-browser.cjs",
-    "module": "dist/duckdb-browser.mjs",
-    "types": "dist/duckdb-browser.d.ts",
-    "jsdelivr": "dist/duckdb-browser.cjs",
-    "unpkg": "dist/duckdb-browser.mjs",
-    "sideEffects": false,
-    "browser": {
-        "fs": false,
-        "os": false,
-        "path": false,
-        "perf_hooks": false,
-        "worker_threads": false
-    },
-    "exports": {
-        "./dist/duckdb-eh.wasm": "./dist/duckdb-eh.wasm",
-        "./dist/duckdb-browser": "./dist/duckdb-browser.mjs",
-        "./dist/duckdb-browser.cjs": "./dist/duckdb-browser.cjs",
-        "./dist/duckdb-browser.mjs": "./dist/duckdb-browser.mjs",
-        "./dist/duckdb-browser-eh.worker.js": "./dist/duckdb-browser-eh.worker.js",
-        ".": {
-            "browser": {
-                "types": "./dist/duckdb-browser.d.ts",
-                "import": "./dist/duckdb-browser.mjs",
-                "require": "./dist/duckdb-browser.cjs"
-            },
-            "node": {
-                "types": "./dist/duckdb-node.d.ts",
-                "import": "./dist/duckdb-node.cjs",
-                "require": "./dist/duckdb-node.cjs"
-            },
-            "types": "./dist/duckdb-browser.d.ts",
-            "import": "./dist/duckdb-browser.mjs",
-            "require": "./dist/duckdb-browser.cjs"
-        }
-    }
+    "packageManager": "yarn@4.9.1"
 }
