@@ -23,10 +23,12 @@
         "csv"
     ],
     "dependencies": {
-        "apache-arrow": "^11.0.0"
+        "apache-arrow": "^17.0.0"
     },
     "files": [
         "dist",
+        "!dist/tests-*",
+        "!dist/duckdb-browser-mvp.worker.js.map",
         "!dist/types/test"
     ],
     "main": "dist/duckdb-browser.cjs",
@@ -44,9 +46,12 @@
     },
     "exports": {
         "./dist/duckdb-eh.wasm": "./dist/duckdb-eh.wasm",
+        "./dist/duckdb-coi.wasm": "./dist/duckdb-coi.wasm",
         "./dist/duckdb-browser": "./dist/duckdb-browser.mjs",
         "./dist/duckdb-browser.cjs": "./dist/duckdb-browser.cjs",
         "./dist/duckdb-browser.mjs": "./dist/duckdb-browser.mjs",
+        "./dist/duckdb-browser-coi.pthread.worker.js": "./dist/duckdb-browser-coi.pthread.worker.js",
+        "./dist/duckdb-browser-coi.worker.js": "./dist/duckdb-browser-coi.worker.js",
         "./dist/duckdb-browser-eh.worker.js": "./dist/duckdb-browser-eh.worker.js",
         ".": {
             "browser": {
