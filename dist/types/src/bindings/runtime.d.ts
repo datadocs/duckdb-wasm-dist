@@ -18,7 +18,6 @@ export declare enum DuckDBDataProtocol {
     HTTP = 4,
     S3 = 5
 }
-export declare function getDataProtocolName(protocol?: number | string): string;
 /** File flags for opening files*/
 export declare enum FileFlags {
     FILE_FLAGS_READ = 1,
@@ -27,16 +26,6 @@ export declare enum FileFlags {
     FILE_FLAGS_FILE_CREATE = 8,
     FILE_FLAGS_FILE_CREATE_NEW = 16,
     FILE_FLAGS_APPEND = 32
-}
-/**
- * The result type of openFile function.
- * from C++ source file: lib/src/io/web_filesystem.cc
- */
-export declare class OpenedFile {
-    readonly fileSize: number;
-    readonly fileBufferPtr: number;
-    constructor(fileSize: number, fileBufferPtr?: number);
-    getCppPointer(mod: EmscriptenModule): number;
 }
 /** Configuration for the AWS S3 Filesystem */
 export interface S3Config {
@@ -64,6 +53,11 @@ export interface DuckDBGlobalFileInfo {
     allowFullHttpReads?: boolean;
     s3Config?: S3Config;
 }
+export interface PreparedDBFileHandle {
+    path: string;
+    handle: any;
+    fromCached: boolean;
+}
 export type CallSRetResult = [status: number, dataPtr: number, dataSize: number];
 /** Call a function with packed response buffer */
 export declare function callSRet(mod: DuckDBModule, funcName: string, argTypes: Array<Emscripten.JSType>, args: Array<any>): CallSRetResult;
@@ -71,16 +65,14 @@ export declare function callSRet(mod: DuckDBModule, funcName: string, argTypes: 
 export declare function dropResponseBuffers(mod: DuckDBModule): void;
 /** The duckdb runtime */
 export interface DuckDBRuntime {
-    /** Mapping from file path to file handle */
     _files?: Map<string, any>;
     _udfFunctions: Map<number, UDFFunction>;
     testPlatformFeature(mod: DuckDBModule, feature: number): boolean;
     getDefaultDataProtocol(mod: DuckDBModule): number;
     openFile(mod: DuckDBModule, fileId: number, flags: FileFlags): void;
-    openFileAsync?(mod: DuckDBModule, fileId: number, flags: FileFlags): Promise<number>;
     syncFile(mod: DuckDBModule, fileId: number): void;
     closeFile(mod: DuckDBModule, fileId: number): void;
-    closeFileByName?(mod: DuckDBModule, fileName: string): boolean;
+    dropFile(mod: DuckDBModule, fileNamePtr: number, fileNameLen: number): void;
     getLastFileModificationTime(mod: DuckDBModule, fileId: number): number;
     truncateFile(mod: DuckDBModule, fileId: number, newSize: number): void;
     readFile(mod: DuckDBModule, fileId: number, buffer: number, bytes: number, location: number): number;
@@ -91,8 +83,12 @@ export interface DuckDBRuntime {
     listDirectoryEntries(mod: DuckDBModule, pathPtr: number, pathLen: number): boolean;
     glob(mod: DuckDBModule, pathPtr: number, pathLen: number): void;
     moveFile(mod: DuckDBModule, fromPtr: number, fromLen: number, toPtr: number, toLen: number): void;
-    checkFile(mod: DuckDBModule, pathPtr: number, pathLen: number, urlPtr?: number, urlLen?: number): boolean;
+    checkFile(mod: DuckDBModule, pathPtr: number, pathLen: number): boolean;
     removeFile(mod: DuckDBModule, pathPtr: number, pathLen: number): void;
+    prepareFileHandle?: (path: string, protocol: DuckDBDataProtocol) => Promise<PreparedDBFileHandle[]>;
+    prepareFileHandles?: (path: string[], protocol: DuckDBDataProtocol) => Promise<PreparedDBFileHandle[]>;
+    prepareDBFileHandle?: (path: string, protocol: DuckDBDataProtocol) => Promise<PreparedDBFileHandle[]>;
+    progressUpdate(final: number, percentage: number, iteration: number): void;
     callScalarUDF(mod: DuckDBModule, response: number, funcId: number, descPtr: number, descSize: number, ptrsPtr: number, ptrsSize: number): void;
 }
 export declare const DEFAULT_RUNTIME: DuckDBRuntime;

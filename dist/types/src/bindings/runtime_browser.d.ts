@@ -1,13 +1,14 @@
 import { DuckDBFileInfo, DuckDBGlobalFileInfo, DuckDBRuntime } from './runtime';
 import { DuckDBModule } from './duckdb_module';
-export type DuckDBBrowserRuntime = DuckDBRuntime & {
+export declare const BROWSER_RUNTIME: DuckDBRuntime & {
+    _files: Map<string, any>;
     _fileInfoCache: Map<number, DuckDBFileInfo>;
     _globalFileInfo: DuckDBGlobalFileInfo | null;
-    /** Internal method for closing a file from given file info */
-    _closeFile(mod: DuckDBModule, file: DuckDBFileInfo): void;
+    _preparedHandles: Record<string, FileSystemSyncAccessHandle>;
+    _opfsRoot: FileSystemDirectoryHandle | null;
     getFileInfo(mod: DuckDBModule, fileId: number): DuckDBFileInfo | null;
     getFileInfoByName(mod: DuckDBModule, fileName: string): DuckDBFileInfo | null;
     getGlobalFileInfo(mod: DuckDBModule): DuckDBGlobalFileInfo | null;
+    assignOPFSRoot(): Promise<void>;
 };
-export declare const BROWSER_RUNTIME: DuckDBBrowserRuntime;
 export default BROWSER_RUNTIME;

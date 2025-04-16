@@ -9,6 +9,7 @@ import { DuckDBConfig } from '../bindings/config';
 import { InstantiationProgress } from '../bindings/progress';
 import { WebFile } from '../bindings/web_file';
 import { DuckDBDataProtocol } from '../bindings';
+import { ProgressEntry } from '../log';
 export declare class AsyncDuckDB implements AsyncDuckDBBindings {
     /** The message handler */
     protected readonly _onMessageHandler: (event: MessageEvent) => void;
@@ -18,6 +19,8 @@ export declare class AsyncDuckDB implements AsyncDuckDBBindings {
     protected readonly _onCloseHandler: () => void;
     /** Instantiate the module */
     protected _onInstantiationProgress: ((p: InstantiationProgress) => void)[];
+    /** Progress callbacks */
+    protected _onExecutionProgress: ((p: ProgressEntry) => void)[];
     /** The logger */
     protected readonly _logger: Logger;
     /** The worker */
@@ -57,7 +60,6 @@ export declare class AsyncDuckDB implements AsyncDuckDBBindings {
     dropFiles(): Promise<null>;
     /** Flush all files */
     flushFiles(): Promise<null>;
-    closeFile(name: string): Promise<boolean>;
     /** Open the database */
     instantiate(mainModuleURL: string, pthreadWorkerURL?: string | null, progress?: (progress: InstantiationProgress) => void): Promise<null>;
     /** Get the version */
@@ -77,7 +79,7 @@ export declare class AsyncDuckDB implements AsyncDuckDBBindings {
     /** Run a query */
     runQuery(conn: ConnectionID, text: string): Promise<Uint8Array>;
     /** Start a pending query */
-    startPendingQuery(conn: ConnectionID, text: string): Promise<Uint8Array | null>;
+    startPendingQuery(conn: ConnectionID, text: string, allowStreamResult?: boolean): Promise<Uint8Array | null>;
     /** Poll a pending query */
     pollPendingQuery(conn: ConnectionID): Promise<Uint8Array | null>;
     /** Cancel a pending query */
@@ -107,7 +109,9 @@ export declare class AsyncDuckDB implements AsyncDuckDBBindings {
     /** Register a file buffer. */
     registerFileBuffer(name: string, buffer: Uint8Array): Promise<void>;
     /** Register a file handle. */
-    registerFileHandle(name: string, handle: any, protocol: DuckDBDataProtocol, directIO: boolean): Promise<void>;
+    registerFileHandle<HandleType>(name: string, handle: HandleType, protocol: DuckDBDataProtocol, directIO: boolean): Promise<void>;
+    /** Enable file statistics */
+    registerOPFSFileName(name: string): Promise<void>;
     /** Enable file statistics */
     collectFileStatistics(name: string, enable: boolean): Promise<void>;
     /** Export file statistics */

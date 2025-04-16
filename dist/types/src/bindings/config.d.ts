@@ -48,6 +48,10 @@ export interface DuckDBConfig {
      */
     maximumThreads?: number;
     /**
+     * The direct io flag
+     */
+    useDirectIO?: boolean;
+    /**
      * The query config
      */
     query?: DuckDBQueryConfig;
@@ -56,14 +60,6 @@ export interface DuckDBConfig {
      */
     filesystem?: DuckDBFilesystemConfig;
     /**
-     * Checkpoint when WAL reaches this size (default: 16MB)
-     */
-    checkpointWALSize?: number;
-    /**
-     * Force checkpoint when CHECKPOINT is called or on shutdown, even if no changes have been made
-     */
-    forceCheckpoint?: boolean;
-    /**
      * Whether to allow unsigned extensions
      */
     allowUnsignedExtensions?: boolean;
@@ -71,4 +67,9 @@ export interface DuckDBConfig {
      * Custom user agent string
      */
     customUserAgent?: string;
+    checkpointWALSize?: number;
+    /**
+     * Force checkpoint when CHECKPOINT is called or on shutdown, even if no changes have been made
+     */
+    forceCheckpoint?: boolean;
 }

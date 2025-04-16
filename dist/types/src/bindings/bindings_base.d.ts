@@ -4,15 +4,14 @@ import { Logger } from '../log';
 import { InstantiationProgress } from './progress';
 import { DuckDBBindings } from './bindings_interface';
 import { DuckDBConnection } from './connection';
-import { DuckDBDataProtocol } from './runtime';
-import type { DuckDBRuntime } from './runtime';
+import { DuckDBRuntime, DuckDBDataProtocol } from './runtime';
 import { CSVInsertOptions, JSONInsertOptions, ArrowInsertOptions } from './insert_options';
 import { ScriptTokens } from './tokens';
 import { FileStatistics } from './file_stats';
 import { WebFile } from './web_file';
 import * as arrow from 'apache-arrow';
 declare global {
-    var DUCKDB_RUNTIME: DuckDBRuntime;
+    var DUCKDB_RUNTIME: any;
 }
 /** A DuckDB Feature */
 export declare enum DuckDBFeature {
@@ -71,7 +70,7 @@ export declare abstract class DuckDBBindingsBase implements DuckDBBindings {
      *  On null, the query has to be executed using `pollPendingQuery` until that returns != null.
      *  Results can then be fetched using `fetchQueryResults`
      */
-    startPendingQuery(conn: number, text: string): Uint8Array | null;
+    startPendingQuery(conn: number, text: string, allowStreamResult?: boolean): Uint8Array | null;
     /** Poll a pending query */
     pollPendingQuery(conn: number): Uint8Array | null;
     /** Cancel a pending query */
@@ -106,8 +105,15 @@ export declare abstract class DuckDBBindingsBase implements DuckDBBindings {
     registerFileText(name: string, text: string): void;
     /** Register a file buffer */
     registerFileBuffer(name: string, buffer: Uint8Array): void;
+    prepareFileHandle(fileName: string, protocol: DuckDBDataProtocol): Promise<void>;
+    /** Prepare a file handle that could only be acquired aschronously */
+    prepareDBFileHandle(path: string, protocol: DuckDBDataProtocol): Promise<void>;
+    /** Prepare a file object URL */
+    prepareFileHandleAsync<HandleType>(name: string, handle: HandleType, protocol: DuckDBDataProtocol, directIO: boolean): Promise<HandleType>;
+    /** Register a file object URL async */
+    registerFileHandleAsync<HandleType>(name: string, handle: HandleType, protocol: DuckDBDataProtocol, directIO: boolean): Promise<void>;
     /** Register a file object URL */
-    registerFileHandle<HandleType>(name: string, handle: HandleType, protocol: DuckDBDataProtocol, directIO: boolean): Promise<void>;
+    registerFileHandle<HandleType>(name: string, handle: HandleType, protocol: DuckDBDataProtocol, directIO: boolean): void;
     /** Drop file */
     dropFile(name: string): void;
     /** Drop files */
@@ -118,9 +124,8 @@ export declare abstract class DuckDBBindingsBase implements DuckDBBindings {
     copyFileToPath(name: string, path: string): void;
     /** Write a file to a buffer */
     copyFileToBuffer(name: string): Uint8Array;
-    /** Close file (This method is used for explicitly clsoing OPFS file handle) */
-    closeFile(fileName: string): boolean;
     /** Enable tracking of file statistics */
+    registerOPFSFileName(file: string): Promise<void>;
     collectFileStatistics(file: string, enable: boolean): void;
     /** Export file statistics */
     exportFileStatistics(file: string): FileStatistics;

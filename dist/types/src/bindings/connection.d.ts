@@ -20,7 +20,7 @@ export declare class DuckDBConnection {
     /** Send a query */
     send<T extends {
         [key: string]: arrow.DataType;
-    } = any>(text: string): Promise<arrow.RecordBatchStreamReader<T>>;
+    } = any>(text: string, allowStreamResult?: boolean): Promise<arrow.RecordBatchStreamReader<T>>;
     /** Cancel a query that was sent earlier */
     cancelSent(): boolean;
     /** Get table names */

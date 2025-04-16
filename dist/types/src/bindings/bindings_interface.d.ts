@@ -13,7 +13,7 @@ export interface DuckDBBindings {
     connect(): DuckDBConnection;
     disconnect(conn: number): void;
     runQuery(conn: number, text: string): Uint8Array;
-    startPendingQuery(conn: number, text: string): Uint8Array | null;
+    startPendingQuery(conn: number, text: string, allowStreamResult: boolean): Uint8Array | null;
     pollPendingQuery(conn: number): Uint8Array | null;
     cancelPendingQuery(conn: number): boolean;
     fetchQueryResults(conn: number): Uint8Array;
@@ -30,14 +30,18 @@ export interface DuckDBBindings {
     registerFileURL(name: string, url: string, proto: DuckDBDataProtocol, directIO: boolean): void;
     registerFileText(name: string, text: string): void;
     registerFileBuffer(name: string, buffer: Uint8Array): void;
-    registerFileHandle<HandleType>(name: string, handle: HandleType, protocol: DuckDBDataProtocol, directIO: boolean): Promise<void>;
+    registerFileHandle<HandleType>(name: string, handle: HandleType, protocol: DuckDBDataProtocol, directIO: boolean): void;
+    registerFileHandleAsync<HandleType>(name: string, handle: HandleType, protocol: DuckDBDataProtocol, directIO: boolean): Promise<void>;
+    prepareFileHandleAsync<HandleType>(name: string, handle: HandleType, protocol: DuckDBDataProtocol, directIO: boolean): Promise<HandleType>;
+    prepareFileHandle(path: string, protocol: DuckDBDataProtocol): Promise<void>;
+    prepareDBFileHandle(path: string, protocol: DuckDBDataProtocol): Promise<void>;
     globFiles(path: string): WebFile[];
     dropFile(name: string): void;
     dropFiles(): void;
     flushFiles(): void;
-    closeFile(name: string): boolean;
     copyFileToPath(name: string, path: string): void;
     copyFileToBuffer(name: string): Uint8Array;
+    registerOPFSFileName(file: string): void;
     collectFileStatistics(file: string, enable: boolean): void;
     exportFileStatistics(file: string): FileStatistics;
 }

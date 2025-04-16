@@ -36,6 +36,13 @@ export type LogEntry<O, T, E, V> = {
     readonly event: E;
     readonly value: V;
 };
+export type ProgressEntry = {
+    readonly status: string;
+    readonly percentage: string;
+    readonly repetitions: string;
+};
+/** An execution progress handler */
+export type ExecutionProgressHandler = (p: ProgressEntry) => void;
 export type LogEntryVariant = LogEntry<LogOrigin.BINDINGS, LogTopic.INSTANTIATE, LogEvent.ERROR, string> | LogEntry<LogOrigin.BINDINGS, LogTopic.QUERY, LogEvent.START, void> | LogEntry<LogOrigin.BINDINGS, LogTopic.QUERY, LogEvent.OK, void> | LogEntry<LogOrigin.BINDINGS, LogTopic.QUERY, LogEvent.ERROR, void> | LogEntry<LogOrigin.BINDINGS, LogTopic.CONNECT, LogEvent.OK, void> | LogEntry<LogOrigin.BINDINGS, LogTopic.CONNECT, LogEvent.ERROR, void> | LogEntry<LogOrigin.BINDINGS, LogTopic.DISCONNECT, LogEvent.OK, void> | LogEntry<LogOrigin.BINDINGS, LogTopic.DISCONNECT, LogEvent.ERROR, void> | LogEntry<LogOrigin.BINDINGS, LogTopic.OPEN, LogEvent.START, void> | LogEntry<LogOrigin.BINDINGS, LogTopic.OPEN, LogEvent.OK, void> | LogEntry<LogOrigin.BINDINGS, LogTopic.OPEN, LogEvent.ERROR, void> | LogEntry<LogOrigin.ASYNC_DUCKDB, LogTopic.QUERY, LogEvent.RUN, string>;
 export interface Logger {
     log(entry: LogEntryVariant): void;

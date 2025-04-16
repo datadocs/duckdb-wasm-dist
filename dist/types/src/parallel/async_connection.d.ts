@@ -21,7 +21,7 @@ export declare class AsyncDuckDBConnection {
     /** Send a query */
     send<T extends {
         [key: string]: arrow.DataType;
-    } = any>(text: string): Promise<arrow.AsyncRecordBatchStreamReader<T>>;
+    } = any>(text: string, allowStreamResult?: boolean): Promise<arrow.AsyncRecordBatchStreamReader<T>>;
     /** Cancel a query that was sent earlier */
     cancelSent(): Promise<boolean>;
     /** Get table names */
@@ -31,7 +31,7 @@ export declare class AsyncDuckDBConnection {
     /** Create a prepared statement */
     prepare<T extends {
         [key: string]: arrow.DataType;
-    } = any>(text: string): Promise<AsyncPreparedStatement>;
+    } = any>(text: string): Promise<AsyncPreparedStatement<T>>;
     /** Insert an arrow table */
     insertArrowTable(table: arrow.Table, options: ArrowInsertOptions): Promise<void>;
     /** Insert an arrow table from an ipc stream */

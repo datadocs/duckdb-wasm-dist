@@ -1,10 +1,10 @@
 /// <reference types="emscripten" />
 import { DuckDBModule } from './duckdb_module';
 import { DuckDBBindingsBase } from './bindings_base';
-import type { DuckDBRuntime } from './runtime';
+import { DuckDBRuntime } from './runtime';
 import { Logger } from '../log';
 declare global {
-    var DUCKDB_RUNTIME: DuckDBRuntime;
+    var DUCKDB_RUNTIME: any;
 }
 /** DuckDB bindings for node.js */
 export declare class DuckDBNodeBindings extends DuckDBBindingsBase {
