@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+    <meta name="renderer" content="webkit" />
+    <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=0" />
+    <title>Datadocs DuckDB Playground</title>
+    <link rel="stylesheet" href="mvp.css">
+    <link rel="stylesheet" href="./utils/logs.css">
+    <style>
+        .toolbar {
+            justify-content: flex-start;
+            align-items: center
+        }
+
+        .toolbar>button {
+            padding: 4px 8px;
+        }
+    </style>
+</head>
+
+<body>
+    <main>
+        <section class="toolbar">
+            <label for="duckdb-mode">DuckDB Mode:</label>
+            <select name="duckdb-mode" id="duckdb-mode" style="margin: 0 8px 0;">
+                <option value="">Loading ...</option>
+                <option value="mvp" disabled>MVP (minimum viable product)</option>
+                <option value="eh">EH (exception handling)</option>
+                <option value="coi">COI (cross origin isolation)</option>
+            </select>
+        </section>
+        <section class="toolbar">
+            <button style="margin-right: 4px" id="btnRunTestSQL">Run Test SQL</button>
+            <button style="margin-right: 4px" id="btnImportCSV">Download CSV to OPFS</button>
+            <button style="margin-right: 4px" id="btnQueryCSV">Create table from CSV</button>
+            <button style="margin-right: 4px" id="btnQueryTable">Query Table</button>
+        </section>
+        <pre style="margin: 0;max-width: unset;width: 100%;"><code id="txtLogs"></code></pre>
+    </main>
+
+    <script type="module" src="./playground/index.ts"></script>
+</body>
+
+</html>

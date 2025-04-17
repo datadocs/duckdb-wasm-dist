@@ -1,0 +1,27 @@
+
+.logs-container > * {
+  margin: 4px;
+  font-size: 14px;
+}
+
+.logs-container > pre {
+  font-size: 12px;
+  margin: 8px 4px;
+  border: 1px solid #333;
+  padding: 8px 4px;
+  font-family: monospace;
+}
+
+.logs-container .log-text {
+  font-family: monospace;
+  margin: 3px 0;
+}
+.logs-container .log-text.e {
+  color: #f65314;
+}
+.logs-container .log-text.w {
+  color: #ffbb00;
+}
+.logs-container .log-text.i {
+  color: #00a4e4;
+}

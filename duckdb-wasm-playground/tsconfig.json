@@ -1,0 +1,21 @@
+{
+  "compilerOptions": {
+    "lib": ["ES2022", "DOM"],
+    "target": "ES2022",
+    "module": "CommonJS",
+    "outDir": "dist/tsc",
+    "strict": true,
+    "skipLibCheck": true,
+    "incremental": true,
+    "sourceMap": false,
+    "removeComments": false,
+    "declaration": false,
+    "moduleResolution": "node",
+    "preserveConstEnums": true,
+    "noImplicitOverride": true,
+    "noEmit": true,
+    "types": ["node", "mocha", "wicg-file-system-access"]
+  },
+  "include": ["lib"],
+  "exclude": ["**/_dprctd*/**", "dist", "node_modules"]
+}

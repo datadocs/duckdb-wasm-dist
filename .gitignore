@@ -1,4 +1,5 @@
 dist
+package-latest.json
 .yarn
 
 # Personal Config

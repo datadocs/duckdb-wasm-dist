@@ -8,7 +8,11 @@
         "url": "https://github.com/datadocs/duckdb-wasm.git"
     },
     "workspaces": [
-        "duckdb-wasm"
+        "duckdb-wasm",
+        "duckdb-wasm-playground"
     ],
+    "scripts": {
+        "start": "yarn workspace @datadocs/duckdb-wasm-playground run start"
+    },
     "packageManager": "yarn@4.9.1"
 }
