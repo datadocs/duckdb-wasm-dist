@@ -14,5 +14,8 @@
     "scripts": {
         "start": "yarn workspace @datadocs/duckdb-wasm-playground run start"
     },
-    "packageManager": "yarn@4.9.1"
+    "packageManager": "yarn@4.9.1",
+    "devDependencies": {
+        "@types/node": "^22.14.1"
+    }
 }

@@ -8,13 +8,15 @@ remove_dist_by_pattern() {
 }
 
 main() {
+    execute rm -r -- "duckdb-wasm/dist/types/test";
+
     remove_dist_by_pattern 'tests-*'         # Test files
     remove_dist_by_pattern 'duckdb-node*'    # Node.js files
-    # remove_dist_by_pattern '*-coi.*'         # coi files (pthread)
-    remove_dist_by_pattern '*-mvp.*'         # mvp files
+    # remove_dist_by_pattern '*-coi.*'       # coi files (pthread)
+    # remove_dist_by_pattern '*-mvp.*'         # mvp files
     remove_dist_by_pattern '*-blocking.*'    # sync version
 }
 
-# change the current directory to the script directory
-pushd "$( dirname -- "${BASH_SOURCE[0]}" )" >/dev/null || exit 1;
+# change the current directory to the project directory
+pushd "$( dirname -- "${BASH_SOURCE[0]}" )/.." >/dev/null || exit 1;
 main "$@";

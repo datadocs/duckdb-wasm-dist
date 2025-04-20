@@ -1,10 +1,12 @@
 dist
-package-latest.json
+package-upstream.json
 .yarn
+.env
+
+git.info
 
 # Personal Config
 rsync.config
-.vscode
 
 # Log
 *.log

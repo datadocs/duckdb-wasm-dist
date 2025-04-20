@@ -1,0 +1,6 @@
+{
+    "files.associations": {
+        "rsync.config": "shellscript",
+        "example.rsync.config": "shellscript"
+    }
+}
