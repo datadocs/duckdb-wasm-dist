@@ -1,6 +1,6 @@
 {
     "name": "@datadocs/duckdb-wasm",
-    "version": "1.11.0",
+    "version": "1.11.1",
     "description": "DuckDB powered by WebAssembly",
     "license": "MIT",
     "repository": {
@@ -23,7 +23,7 @@
         "csv"
     ],
     "dependencies": {
-        "apache-arrow": "^17.0.0"
+        "apache-arrow": "npm:@datadocs/apache-arrow@18.0.0"
     },
     "files": [
         "git.info",

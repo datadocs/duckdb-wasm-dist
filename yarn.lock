@@ -35,7 +35,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@datadocs/duckdb-wasm@workspace:duckdb-wasm"
   dependencies:
-    apache-arrow: "npm:^17.0.0"
+    apache-arrow: "npm:@datadocs/apache-arrow@18.0.0"
   languageName: unknown
   linkType: soft
 
@@ -1074,9 +1074,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"apache-arrow@npm:^17.0.0":
-  version: 17.0.0
-  resolution: "apache-arrow@npm:17.0.0"
+"apache-arrow@npm:@datadocs/apache-arrow@18.0.0":
+  version: 18.0.0
+  resolution: "@datadocs/apache-arrow@npm:18.0.0::__archiveUrl=https%3A%2F%2Fnpm.pkg.github.com%2Fdownload%2F%40datadocs%2Fapache-arrow%2F18.0.0%2F9b39ea9b8b17bf3ac8e16fdef46531307ccd4cd3"
   dependencies:
     "@swc/helpers": "npm:^0.5.11"
     "@types/command-line-args": "npm:^5.2.3"
@@ -1088,8 +1088,8 @@ __metadata:
     json-bignum: "npm:^0.0.3"
     tslib: "npm:^2.6.2"
   bin:
-    arrow2csv: bin/arrow2csv.cjs
-  checksum: 10c0/fa705b88a5d76c05122414bf7ba8a46c93f3509584de332eb045c736384cdfe53fc140135abbdeaa6036dfe422d145598b461b89f0b710cdeebbb732e9fb7f58
+    arrow2csv: bin/arrow2csv.js
+  checksum: 10c0/5228c69a2f3ab7e29a81905adfe4db7d2f867b1bd3d9848cfdf272d0123e528a8873559be0ff039e3fcb7f37ba0e72f9786bfdc1c27ab4c2b6e141f444c7760c
   languageName: node
   linkType: hard
 

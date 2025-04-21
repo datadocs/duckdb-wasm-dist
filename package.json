@@ -3,6 +3,7 @@
     "version": "0.0.1",
     "description": "A monorepo for publishing DuckDB WASM and testing it",
     "license": "MIT",
+    "private": true,
     "repository": {
         "type": "git",
         "url": "https://github.com/datadocs/duckdb-wasm.git"
