@@ -1,6 +1,6 @@
 ---
 author: hangxingliu
-updated_on: 2025-04-20 18:26:02
+updated_on: 2025-04-22 06:58:41
 ---
 
 # DuckDB-Wasm
@@ -27,20 +27,14 @@ yarn install
 yarn start
 ```
 
+Then, please make sure the GITHUB_TOKEN env variable has been set or you can define it in the .env file at the root of this project. (You can read the next sub-section to learn more about this token)
+
 Finally, use the following command to publish the package if there are no issues in above test step:
 
 ``` bash
-yarn version patch
-
-# Please make sure the GITHUB_TOKEN env variable has been set or
-#   you can define it in the .env file at the root of this project.
-# You can read the next sub-section to learn more about this token.
-yarn npm publish --access public
-
-# Then, you can check the package at:
-# https://github.com/datadocs/duckdb-wasm-dist/pkgs/npm/duckdb-wasm
-
-# After published, please create a git commit and push it for the changes about version.
+./scripts/release-new-version.sh
+# or:
+# cd duckdb-wasm && yarn version patch && yarn npm publish --access public
 ```
 
 ### Create a `GITHUB_TOKEN` for Publishing

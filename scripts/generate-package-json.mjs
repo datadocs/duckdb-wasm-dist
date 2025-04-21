@@ -19,6 +19,13 @@ pkgJSON.repository = originalOutput.repository;
 pkgJSON.publishConfig = originalOutput.publishConfig;
 pkgJSON.files.unshift('git.info');
 
+// keep our custom patched dependencies
+if (!pkgJSON.dependencies) pkgJSON.dependencies = {};
+for (const [key, value] of Object.entries(originalOutput.dependencies || {})) {
+    if (String(value).match(/^\w+:/))
+        pkgJSON.dependencies[key] = value;
+}
+
 // handle version
 const versionPrefix1 = String(pkgJSON.version).match(/^\d+\.\d+/)[0];
 const versionPrefix2 = String(originalOutput.version).match(/^\d+\.\d+/)[0];
