@@ -1,1 +1,2 @@
 *.csv
+!student_exam_scores.csv
