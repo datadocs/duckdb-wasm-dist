@@ -1,6 +1,6 @@
 {
     "name": "@datadocs/duckdb-wasm",
-    "version": "1.11.2",
+    "version": "1.11.5",
     "description": "DuckDB powered by WebAssembly",
     "license": "MIT",
     "repository": {
