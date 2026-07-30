@@ -22,7 +22,7 @@
 </head>
 
 <body>
-    <main>
+    <main style="padding: 1rem">
         <section class="toolbar">
             <label for="duckdb-mode">DuckDB Mode:</label>
             <select name="duckdb-mode" id="duckdb-mode" style="margin: 0 8px 0;">
@@ -31,6 +31,10 @@
                 <option value="eh">EH (exception handling)</option>
                 <option value="coi">COI (cross origin isolation)</option>
             </select>
+        </section>
+        <section class="toolbar">
+            <label for="enable-shared-worker-mode">SharedWorker Mode:</label>
+            <input type="checkbox" id="enable-shared-worker-mode" name="shared-worker-mode" value="true" style="margin: 0.4rem;">
         </section>
         <section class="toolbar">
             <button style="margin-right: 4px" id="btnRunTestSQL">Run Test SQL</button>

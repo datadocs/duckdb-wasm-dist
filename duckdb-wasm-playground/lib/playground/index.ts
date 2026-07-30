@@ -4,6 +4,10 @@ import { LogsWriter } from "../utils/logs.js";
 import { DuckDB } from "./duckdb.js";
 import { onImportCSV } from "./import-csv-into-opfs.js";
 import { TEST_SQLS } from "./test-sql.js";
+import { FlagsInURL } from "./flags-in-url.js";
+import { byId, onClick } from "../utils/dom.js";
+
+import DEV_NOTES from "../SHARED-WORKER-AND-ASYNC-IO.md?url";
 
 main().catch((error) => {
     console.error(error);
@@ -12,12 +16,23 @@ async function main() {
     let registered = false;
     let count = 0;
 
-    const logs = new LogsWriter(document.getElementById("txtLogs")!);
-    const onClick = (elementId: string, handler: () => unknown) =>
-        document.getElementById(elementId)?.addEventListener("click", (ev) => {
-            ev.preventDefault();
-            handler();
-        });
+    const flags = new FlagsInURL();
+    console.log(flags);
+
+    const logs = new LogsWriter(byId("txtLogs"));
+    try {
+        const resp = await fetch(DEV_NOTES);
+        if (resp.status === 200) logs.addText(await resp.text());
+    } catch (error) {
+        console.log(error);
+    }
+
+    const cbSharedWorker = byId<HTMLInputElement>("enable-shared-worker-mode");
+    cbSharedWorker.checked = flags.sharedWorker;
+    cbSharedWorker.onchange = (ev) => {
+        ev.preventDefault();
+        flags.setSharedWorkerMode(cbSharedWorker.checked);
+    };
 
     onClick("btnRunTestSQL", errorToLogs(runTestSQL, logs, "runTestSQL"));
     onClick(
@@ -27,9 +42,35 @@ async function main() {
     onClick("btnQueryCSV", errorToLogs(queryCSV, logs, "queryCSV"));
     onClick("btnQueryTable", errorToLogs(queryTable, logs, "queryTable"));
 
-    const { db, isCOIMode } = await DuckDB();
-    logs.addText("initialized duckdb " + (isCOIMode ? " (COI)" : ""));
+    logs.addText(
+        `JSPI: ${(WebAssembly as any).Suspender ? "Enabled" : "Unsupported"}`
+    );
 
+    const { db, isCOIMode, isSharedWorker } = await DuckDB(flags);
+    const duckdbModeIndicator = byId<HTMLSelectElement>("duckdb-mode");
+    if (duckdbModeIndicator) {
+        const selectedValue = isCOIMode ? "coi" : "eh";
+        const allOptions = Array.from(
+            duckdbModeIndicator.querySelectorAll("option")
+        );
+        for (const op of allOptions) {
+            if (!op.value) {
+                op.parentElement?.removeChild(op);
+                continue;
+            }
+            op.selected = op.value === selectedValue;
+        }
+        duckdbModeIndicator.addEventListener("change", (ev) => {
+            ev.preventDefault();
+            flags.setMode(duckdbModeIndicator.value as any);
+        });
+    }
+
+    logs.addText(
+        "initialized duckdb " +
+            (isCOIMode ? " (COI)" : "") +
+            (isSharedWorker ? " (SharedWorker)" : "")
+    );
 
     async function runTestSQL() {
         const index = count++;
@@ -40,16 +81,25 @@ async function main() {
         try {
             for (const sql of TEST_SQLS) {
                 logs.addText(`[${index}] ` + sql);
-                const result = await conn.query(sql);
-                const rows = result.toArray().map((row) => row.toJSON());
-                console.log(rows);
+                try {
+                    const result = await conn.query(sql);
+                    const rows = result.toArray().map((row) => row.toJSON());
+                    console.log(rows);
+                } catch (error) {
+                    console.error(error);
+                    logs.addText(
+                        `failed to run SQL: ${
+                            (error as Error).message || error
+                        }`,
+                        "e"
+                    );
+                }
             }
         } finally {
             await conn.close();
         }
         logs.addText(`[${index}] run done`);
     }
-
 
     async function queryTable() {
         const index = count++;
@@ -131,6 +181,7 @@ async function main() {
         const conn = await db.connect();
         try {
             await conn.query(sql);
+            // await setTimeout(1000);
             logs.addText(`[${index}] created table`);
             await conn.query(sql2);
         } finally {
